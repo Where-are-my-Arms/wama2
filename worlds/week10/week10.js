@@ -298,18 +298,20 @@ function Obj(shape) {
 };
 
 const HALL_WIDTH       = 1.4;
-let BLOB_SIZE = .45;
-let BLOB_LIFE = 300;
-let BIRTH_OFFSET = 150;
-let BLOB_COUNT = 4;
+let BLOB_SIZE = .2;
+let BLOB_LIFE = 900;
+let BIRTH_OFFSET = 300;
+let BLOB_COUNT = 8;
 let BLOB_COLORS = [
   [1,0,0],
   [0,1,0],
   [0,0,1]
 ]
 
-let COLOR_TIME = 250;
+let COLOR_TIME = 500;
 let CURRENT_COLOR = BLOB_COLORS[0];
+let playSound = false;
+let soundPosition = [];
 
 function updateColor() {
   CURRENT_COLOR = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)]
@@ -351,9 +353,11 @@ function Blob() {
   this.isTouched = (input) => {
     let lPos = input.LC.tip();
     let rPos = input.RC.tip();
-    let touched = (CG.distance(lPos, position) <= BLOB_SIZE || CG.distance(rPos, position) <= BLOB_SIZE);
+    // let touched = (CG.distance(lPos, position) <= BLOB_SIZE || CG.distance(rPos, position) <= BLOB_SIZE);
+    let touched = (CG.distance(rPos, position) <= BLOB_SIZE);
     return touched;
   }
+  this.isValid = () => { return (color[0] == CURRENT_COLOR[0] && color[1] == CURRENT_COLOR[1] && color[1] == CURRENT_COLOR[1]); }
 }
 
 let blobs = [];
@@ -382,6 +386,7 @@ function sendSpawnMessage(object){
 }
 
 function onStartFrame(t, state) {
+   // console.log("ONFRAMESTART, PLAYSOUND " + playSound);
    /*-----------------------------------------------------------------
    Also, for my particular use, I have set up a particular transformation
    so that the virtual room would match my physical room, putting the
@@ -409,24 +414,6 @@ function onStartFrame(t, state) {
          m.translate(-2.01,.04,0);
          state.calibrate = m.value().slice();
       }
-
-      // let avatarIds = Object.keys( MR.avatars);
-      // avatarIds.sort();
-      // let myId = MR.playerid;
-      // let myIndex = avatarIds.indexOf(myId);
-      // let nextIndex = (myIndex+1) % avatarIds.length;
-      // let nextId = avatarIds[nextIndex];
-      // console.log("MYID" + myId);
-      // console.log("NEXTID" + nextId);
-      //
-      // if( MR.avatars[myId].mode == MR.UserType.vr && MR.avatars[nextId].mode == MR.UserType.vr ) {
-      //   // let nextRight =  MR.avatars[nextId].rightController;
-      //   // let nextLeft =  MR.avatars[nextId].leftController;
-      //
-      //   MR.avatars[nextId].rightController = MR.avatars[myId].rightController;
-      //   MR.avatars[nextId].leftController = MR.avatars[myId].leftController;
-      //   console.log("SWAP");
-      // }
    }
 
    if (! state.tStart)
@@ -517,9 +504,11 @@ function onStartFrame(t, state) {
 
    for(let i=0; i<BLOB_COUNT; i++) {
      let b = blobs[i];
-     if(input.LC && b.isTouched(input)) {
+     if(input.LC && b.isTouched(input) && b.isValid()) {
        b.makeTouched();
-       console.log("touched");
+       playSound = true;
+       soundPosition = b.getPos();
+       b.setup(state.frame+10);
      }
      if(!b.isAlive(state.frame)) {
        b.setup(state.frame);
@@ -543,6 +532,7 @@ function onStartFrame(t, state) {
 
 
 function onDraw(t, projMat, viewMat, state, eyeIdx) {
+  // console.log("ONFDRAW, PLAYSOUND " + playSound);
    m.identity();
    m.rotateX(state.tiltAngle);
    m.rotateY(state.turnAngle);
@@ -709,8 +699,10 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
                // NEED TO ROTATE WITH THE DIFFERENCE IN HEADSET ROTATIONS
                // m.rotateQ(headsetRot);
                // m.rotateQ(-nextHeadsetRot);
-               drawSyncController(rPos, rcontroller.orientation, CURRENT_COLOR);
-               drawSyncController(lPos, lcontroller.orientation, CURRENT_COLOR);
+               // drawSyncController(rPos, rcontroller.orientation, CURRENT_COLOR);
+               // drawSyncController(lPos, lcontroller.orientation, CURRENT_COLOR);
+               drawSyncController(rcontroller.position, rcontroller.orientation, CURRENT_COLOR);
+               drawSyncController(lcontroller.position, lcontroller.orientation, CURRENT_COLOR);
              m.restore();
            m.restore();
         }
@@ -757,8 +749,20 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 }
 
 function onEndFrame(t, state) {
+  // console.log("ONENDFRAME, PLAYSOUND " + playSound);
    pollAvatarData();
    const input  = state.input;
+   if (input.HS != null) {
+     this.audioContext1.updateListener(input.HS.position(), input.HS.orientation());
+     this.audioContext2.updateListener(input.HS.position(), input.HS.orientation());
+     if(playSound) {
+       playSound = false;
+       console.log("PLAY SOUNDS");
+       this.audioContext2.playFileAt('assets/audio/peacock.wav', [0,0,0]);
+
+     }
+
+    }
    if (input.LC) input.LC.onEndFrame();
    if (input.RC) input.RC.onEndFrame();
 }
