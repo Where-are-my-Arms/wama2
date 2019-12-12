@@ -319,7 +319,7 @@ function updateColor() {
 
 
 function Blob() {
-  let position, color, birth, death;
+  let position, color, birth, death, wasTouched, revived;
   let setPosition = () => {
     // TODO: ensure that nothing on the ceiling, and on floor?
     // TODO: ensure things are in reach
@@ -327,10 +327,11 @@ function Blob() {
     let b = Math.random() * HALL_WIDTH - HALL_WIDTH/2;
     let c = Math.random() < 0.5 ? -1 : 1;
     let d = Math.random();
+
+	//position = [0,-HALL_WIDTH/2, 0];	
     if(d<0.33) {
       position = [a, b, c*HALL_WIDTH/2];
-    } else if (d<0.67) {
-      position = [a, c*HALL_WIDTH/2, b];
+    } else if (d<0.67) { position = [a, c*HALL_WIDTH/2, b];
     } else {
       position = [c*HALL_WIDTH/2, a, b];
     }
@@ -338,17 +339,30 @@ function Blob() {
   let setColor = () => {
     color = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
   };
-  this.makeTouched = () => { color = [0,0,0]; }
+  this.makeTouched = () => { 
+	color = [0,0,0]; 
+	wasTouched = true;
+	}
   this.getColor = () => { return color };
   this.getPos = () => { return position; };
   this.isAlive = (frame) => { return (frame >= birth && frame < death); }
+	this.kill = (currentFrame) => {
+		death = currentFrame + 50;
+	};
+	this.revived = () => {return revived;};
+	this.setRevived = () => {revived = true;};
+	this.setNotRevived = () => {revived = false;};
   this.setup = (currentFrame) => {
     birth = currentFrame + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
     death = birth + BLOB_LIFE;
+	wasTouched = false;
     // position = [0, HALL_WIDTH/2, 0];
     setPosition();
     setColor();
   }
+	this.wasTouched = () => {
+		return wasTouched;
+	};
   // THIS IS NOT WORKING
   this.isTouched = (input) => {
     let lPos = input.LC.tip();
@@ -357,7 +371,7 @@ function Blob() {
     let touched = (CG.distance(rPos, position) <= BLOB_SIZE);
     return touched;
   }
-  this.isValid = () => { return (color[0] == CURRENT_COLOR[0] && color[1] == CURRENT_COLOR[1] && color[1] == CURRENT_COLOR[1]); }
+  this.isValid = () => { return (color[0] == CURRENT_COLOR[0] && color[1] == CURRENT_COLOR[1] && color[1] == CURRENT_COLOR[1]); console.log(color); console.log(CURRENT_COLOR);};
 }
 
 let blobs = [];
@@ -366,6 +380,7 @@ for(let i=0;i<BLOB_COUNT; i++) {
   let birth = Math.floor(Math.random() * 20);
   let blob = new Blob();
   blob.setup(1);
+ blob.setRevived();
   blobs.push(blob);
 }
 
@@ -504,15 +519,24 @@ function onStartFrame(t, state) {
 
    for(let i=0; i<BLOB_COUNT; i++) {
      let b = blobs[i];
-     if(input.LC && b.isTouched(input) && b.isValid()) {
-       b.makeTouched();
-       playSound = true;
-       soundPosition = b.getPos();
-       b.setup(state.frame+10);
-     }
-     if(!b.isAlive(state.frame)) {
+		if (b.isAlive(state.frame) && b.revived()){
+			b.setNotRevived();
+		}else if (!b.isAlive(state.frame) && !b.revived()) {
+			console.log("reviving\n");
+			b.setup(state.frame);
+			b.setRevived();
+		} else {
+		  if(input.LC && b.isAlive(state.frame) && !b.wasTouched() && b.isTouched(input) && b.isValid()) {
+			 playSound = true;
+			 soundPosition = b.getPos();
+			 //b.setup(state.frame+10);
+			 b.kill(state.frame);
+			 b.makeTouched();
+		  } 
+		}
+     /*if(!b.isAlive(state.frame)) {
        b.setup(state.frame);
-     }
+     }*/
    }
 
    if(state.frame % COLOR_TIME == 0) {
@@ -648,11 +672,82 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
          m.restore();
       m.restore();
    }
+	
+	// Avatars with no Arm swapping
+	let drawNormalAvatars = () => {
 
-   let drawAvatars = () => {
+		// Draw yourself
+		 if (input.LC) {
+			 m.save();
 
-     let avatarIds = Object.keys( MR.avatars);
-     avatarIds.sort();
+			 let P = state.position;
+			 m.translate(-P[0],-P[1],-P[2]);
+			 m.rotateY(-state.turnAngle);
+			 m.rotateX(-state.tiltAngle);
+
+			 drawController(input.LC, 0, [0,0,0]);
+			 drawController(input.RC, 1, [0,0,0]);
+			 if (enableModeler && input.RC.isDown())
+				 showMenu(input.RC.position());
+			 m.restore();
+		 }
+		for (let id in MR.avatars) {
+
+      const avatar = MR.avatars[id];
+
+      if (avatar.mode == MR.UserType.vr) {
+         if (MR.playerid == avatar.playerid)
+            continue;
+
+         let headsetPos = avatar.headset.position;
+         let headsetRot = avatar.headset.orientation;
+
+         if(headsetPos == null || headsetRot == null)
+            continue;
+
+         if (typeof headsetPos == 'undefined') {
+            console.log(id);
+            console.log("not defined");
+         }
+
+         const rcontroller = avatar.rightController;
+         const lcontroller = avatar.leftController;
+
+         let hpos = headsetPos.slice();
+         hpos[1] += EYE_HEIGHT;
+
+         drawHeadset(hpos, headsetRot);
+         //drawFakeHeadset([hpos[0], hpos[1] + EYE_HEIGHT, hpos[2]]);
+         let lpos = lcontroller.position.slice();
+         lpos[1] += EYE_HEIGHT;
+         let rpos = rcontroller.position.slice();
+         rpos[1] += EYE_HEIGHT;
+
+         drawSyncController(rpos, rcontroller.orientation, [1,0,0]);
+         drawSyncController(lpos, lcontroller.orientation, [0,1,1]);
+      }
+   }
+	}
+
+	// Avatars with arm swapping
+	let drawAvatars = () => {
+		let avatarIds = Object.keys( MR.avatars);
+		avatarIds.sort();
+
+		if (input.LC) {
+			let P = state.position;
+			m.save();
+				m.translate(-P[0],-P[1],-P[2]);
+				m.rotateY(-state.turnAngle);
+				m.rotateX(-state.tiltAngle);
+				drawController(input.LC, 0, CURRENT_COLOR);
+				drawController(input.RC, 1, CURRENT_COLOR);
+			 m.restore();
+	 	}
+		// render just yourself if you're alone
+		if (avatarIds.length == 1) {
+			return;
+		}	
 
      let cc = 0;
 
@@ -710,17 +805,10 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
      }
    }
 
-   if (input.LC) {
-      let P = state.position;
-      m.translate(-P[0],-P[1],-P[2]);
-      m.rotateY(-state.turnAngle);
-      m.rotateX(-state.tiltAngle);
-      // drawController(input.LC, 0, CURRENT_COLOR);
-      // drawController(input.RC, 1, CURRENT_COLOR);
-   }
 
    // m.translate(0, HALL_WIDTH/2-EYE_HEIGHT, 0);
    m.save();
+		m.translate(0,-HALL_WIDTH/2,0)// translate so you're standing on the floor
       m.scale(-HALL_WIDTH/2, -HALL_WIDTH/2, -HALL_WIDTH/2);
       drawShape(CG.cube, [1,1,1]);
    m.restore();
@@ -737,7 +825,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
      }
    }
 
-   drawAvatars();
+   drawAvatars(); // avatars with arm swapping
+	//drawNormalAvatars(); // no arm swapping
 
   //  m.save();
   //   m.translate(0,0,-0.3);
