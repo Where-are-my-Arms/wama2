@@ -1,6 +1,4 @@
-"use strict"
-
-/*--------------------------------------------------------------------------------
+"use strict" /*--------------------------------------------------------------------------------
 Note that I measured everything in inches, and then converted to units of meters
 (which is what VR requires) by multiplying by 0.0254.
 --------------------------------------------------------------------------------*/
@@ -18,6 +16,8 @@ const TABLE_WIDTH      = inchesToMeters( 60);
 const TABLE_THICKNESS  = inchesToMeters( 11/8);
 const LEG_THICKNESS    = inchesToMeters(  2.5);
 
+const RANDOM = 100;
+const FIXED = 101;
 let enableModeler = true;
 
 /*Example Grabble Object*/
@@ -298,9 +298,9 @@ function Obj(shape) {
 };
 
 const HALL_WIDTH       = 1.4;
-let BLOB_SIZE = .2;
+let BLOB_SIZE = .1;
 let BLOB_LIFE = 700;
-let BIRTH_OFFSET = 300;
+let BIRTH_OFFSET = 5000;
 let BLOB_COUNT = 15;
 let BLOB_COLORS = [
   [1,0,0],
@@ -319,23 +319,62 @@ function updateColor() {
 
 
 function Blob() {
-  let position, color, birth, death, wasTouched, revived;
-  let setPosition = () => {
+  let position, color, birth, death, wasTouched, revived, mode;
+	let randomPosition = () => {
+		let pos;
+		let a = Math.random() * HALL_WIDTH - HALL_WIDTH/2;
+		let b = Math.random() * HALL_WIDTH - HALL_WIDTH/2;
+		let c = Math.random() < 0.5 ? -1 : 1;
+		let d = Math.random();
+
+		//position = [0,-HALL_WIDTH/2, 0];	
+		if(d<0.33) {
+		  pos = [a, b, c*HALL_WIDTH/2];
+		} else if (d<0.67) { pos = [a, c*HALL_WIDTH/2, b];
+		} else {
+		  pos = [c*HALL_WIDTH/2, a, b];
+		}
+		return pos
+	};
+	let fixedPositions = (nx, ny, nz) => {
+		// nx, ny, nz are the number of blobs you want in each direction
+		let pos;
+		let x = nx + 1;
+		let y = ny + 1;
+		let z = nz + 1;
+	
+		let dx = HALL_WIDTH / x;
+		let dy = HALL_WIDTH / y;
+		let dz = HALL_WIDTH / z;
+
+		let ix = Math.floor(Math.random() * nx) + 1;	
+		let iy = Math.floor(Math.random() * ny) + 1;	
+		let iz = Math.floor(Math.random() * nz) + 1;	
+
+		let px = ix * dx - (HALL_WIDTH / 2);
+		let py = iy * dy - HALL_WIDTH;
+		let pz = iz * dz - (HALL_WIDTH / 2);
+		pos = [px, py, pz];
+		//console.log([dx, dy, dz]);
+		//console.log([0,-HALL_WIDTH / 2, 0]);
+		//console.log(pos);
+		return pos;	
+	};
+
+	let setPosition = () => {
     // TODO: ensure that nothing on the ceiling, and on floor?
     // TODO: ensure things are in reach
-    let a = Math.random() * HALL_WIDTH - HALL_WIDTH/2;
-    let b = Math.random() * HALL_WIDTH - HALL_WIDTH/2;
-    let c = Math.random() < 0.5 ? -1 : 1;
-    let d = Math.random();
-
-	//position = [0,-HALL_WIDTH/2, 0];	
-    if(d<0.33) {
-      position = [a, b, c*HALL_WIDTH/2];
-    } else if (d<0.67) { position = [a, c*HALL_WIDTH/2, b];
-    } else {
-      position = [c*HALL_WIDTH/2, a, b];
-    }
-  }
+		switch (mode) {
+		case RANDOM:
+			position = randomPosition();
+			break;
+		case FIXED:
+			position = fixedPositions(3, 3, 3);
+			break;
+		default:
+			position = fixedPositions(3, 3, 3);
+		}
+	}
   let setColor = () => {
     color = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
   };
@@ -356,6 +395,7 @@ function Blob() {
     birth = currentFrame + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
     death = birth + BLOB_LIFE;
 	wasTouched = false;
+	mode = FIXED;
     // position = [0, HALL_WIDTH/2, 0];
     setPosition();
     setColor();
@@ -371,7 +411,7 @@ function Blob() {
     let touched = (CG.distance(rPos, position) <= BLOB_SIZE);
     return touched;
   }
-  this.isValid = () => { return (color[0] == CURRENT_COLOR[0] && color[1] == CURRENT_COLOR[1] && color[1] == CURRENT_COLOR[1]); console.log(color); console.log(CURRENT_COLOR);};
+  this.isValid = () => { return (color[0] == CURRENT_COLOR[0] && color[1] == CURRENT_COLOR[1] && color[1] == CURRENT_COLOR[1]);};
 }
 
 let blobs = [];
