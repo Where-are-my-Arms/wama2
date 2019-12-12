@@ -824,8 +824,9 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
          m.restore();
       m.restore();
    }
-	
-	let drawSelfAvatar = () => {
+
+	// Draw your real self
+	let drawSelfAvatar = (color) => {
 
 		// Draw yourself
 		 if (input.LC) {
@@ -836,8 +837,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 			 m.rotateY(-state.turnAngle);
 			 m.rotateX(-state.tiltAngle);
 
-			 drawController(input.LC, 0, CURRENT_COLOR);
-			 drawController(input.RC, 1, CURRENT_COLOR);
+			 drawController(input.LC, 0, color);
+			 drawController(input.RC, 1, color);
 			 if (enableModeler && input.RC.isDown())
 				 showMenu(input.RC.position());
 			 m.restore();
@@ -889,20 +890,20 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		let avatarIds = Object.keys( MR.avatars);
 		avatarIds.sort();
 
-		if (input.LC) {
-			let P = state.position;
-			m.save();
-				m.translate(-P[0],-P[1],-P[2]);
-				m.rotateY(-state.turnAngle);
-				m.rotateX(-state.tiltAngle);
-				drawController(input.LC, 0, CURRENT_COLOR);
-				drawController(input.RC, 1, CURRENT_COLOR);
-			 m.restore();
-	 	}
+		// if (input.LC) {
+		// 	let P = state.position;
+		// 	m.save();
+		// 		m.translate(-P[0],-P[1],-P[2]);
+		// 		m.rotateY(-state.turnAngle);
+		// 		m.rotateX(-state.tiltAngle);
+		// 		drawController(input.LC, 0, CURRENT_COLOR);
+		// 		drawController(input.RC, 1, CURRENT_COLOR);
+		// 	 m.restore();
+	 	// }
 		// render just yourself if you're alone
-		if (avatarIds.length == 1) {
-			return;
-		}	
+		// if (avatarIds.length == 1) {
+		// 	return;
+		// }
 
      let cc = 0;
 
@@ -933,26 +934,19 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
            const rcontroller = avatar.rightController;
            const lcontroller = avatar.leftController;
 
-           let rPos = CG.add(headsetPos, nextRelativeRight);
-           let lPos = CG.add(headsetPos, nextRelativeLeft);
 
            m.save();
              m.translate(headsetPos[0], headsetPos[1], headsetPos[2]);
+             m.rotateQ(headsetRot);
              m.save();
-               m.rotateQ(headsetRot);
                m.scale(0.1,0.1,0.1);
                m.save();
                  drawShape(CG.cylinder, [0.2+cc,0.2+cc,0.4+cc]);
                m.restore();
              m.restore();
              m.save();
-               // NEED TO ROTATE WITH THE DIFFERENCE IN HEADSET ROTATIONS
-               // m.rotateQ(headsetRot);
-               // m.rotateQ(-nextHeadsetRot);
-               // drawSyncController(rPos, rcontroller.orientation, CURRENT_COLOR);
-               // drawSyncController(lPos, lcontroller.orientation, CURRENT_COLOR);
-               drawSyncController(rcontroller.position, rcontroller.orientation, CURRENT_COLOR);
-               drawSyncController(lcontroller.position, lcontroller.orientation, CURRENT_COLOR);
+               drawSyncController(nextRelativeRight, rcontroller.orientation, CURRENT_COLOR);
+               drawSyncController(nextRelativeLeft, lcontroller.orientation, CURRENT_COLOR);
              m.restore();
            m.restore();
         }
@@ -960,7 +954,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
      }
    }
 
-	drawSelfAvatar();
+	//drawSelfAvatar(CURRENT_COLOR);
+	drawSelfAvatar([1,1,1]); // drawing real self for debugging here.
 
 
 	let drawBlob = (b) => {
@@ -1030,6 +1025,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		}
    }
 
+   drawAvatars(); // avatars with arm swapping
 	m.translate(0, -EYE_HEIGHT, 0);
 	if (MODE == START) {
 		drawTable(0,0);
@@ -1045,8 +1041,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
    m.restore();
 
 
-   //drawAvatars(); // avatars with arm swapping
-	drawNormalAvatars(); // no arm swapping
+	//drawNormalAvatars(); // no arm swapping
 
   //  m.save();
   //   m.translate(0,0,-0.3);
