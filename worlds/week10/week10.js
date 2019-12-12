@@ -299,16 +299,16 @@ function Obj(shape) {
 
 const HALL_WIDTH       = 1.4;
 let BLOB_SIZE = .2;
-let BLOB_LIFE = 900;
+let BLOB_LIFE = 700;
 let BIRTH_OFFSET = 300;
-let BLOB_COUNT = 8;
+let BLOB_COUNT = 15;
 let BLOB_COLORS = [
   [1,0,0],
   [0,1,0],
   [0,0,1]
 ]
 
-let COLOR_TIME = 500;
+let COLOR_TIME = 400;
 let CURRENT_COLOR = BLOB_COLORS[0];
 let playSound = false;
 let soundPosition = [];
