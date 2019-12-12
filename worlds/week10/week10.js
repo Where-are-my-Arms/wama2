@@ -328,7 +328,7 @@ function Blob() {
     let c = Math.random() < 0.5 ? -1 : 1;
     let d = Math.random();
 
-	//position = [0,-HALL_WIDTH/2, 0];	
+	//position = [0,-HALL_WIDTH/2, 0];
     if(d<0.33) {
       position = [a, b, c*HALL_WIDTH/2];
     } else if (d<0.67) { position = [a, c*HALL_WIDTH/2, b];
@@ -339,8 +339,8 @@ function Blob() {
   let setColor = () => {
     color = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
   };
-  this.makeTouched = () => { 
-	color = [0,0,0]; 
+  this.makeTouched = () => {
+	color = [0,0,0];
 	wasTouched = true;
 	}
   this.getColor = () => { return color };
@@ -532,7 +532,7 @@ function onStartFrame(t, state) {
 			 //b.setup(state.frame+10);
 			 b.kill(state.frame);
 			 b.makeTouched();
-		  } 
+		  }
 		}
      /*if(!b.isAlive(state.frame)) {
        b.setup(state.frame);
@@ -672,7 +672,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
          m.restore();
       m.restore();
    }
-	
+
 	// Avatars with no Arm swapping
 	let drawNormalAvatars = () => {
 
@@ -734,20 +734,20 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		let avatarIds = Object.keys( MR.avatars);
 		avatarIds.sort();
 
-		if (input.LC) {
-			let P = state.position;
-			m.save();
-				m.translate(-P[0],-P[1],-P[2]);
-				m.rotateY(-state.turnAngle);
-				m.rotateX(-state.tiltAngle);
-				drawController(input.LC, 0, CURRENT_COLOR);
-				drawController(input.RC, 1, CURRENT_COLOR);
-			 m.restore();
-	 	}
+		// if (input.LC) {
+		// 	let P = state.position;
+		// 	m.save();
+		// 		m.translate(-P[0],-P[1],-P[2]);
+		// 		m.rotateY(-state.turnAngle);
+		// 		m.rotateX(-state.tiltAngle);
+		// 		drawController(input.LC, 0, CURRENT_COLOR);
+		// 		drawController(input.RC, 1, CURRENT_COLOR);
+		// 	 m.restore();
+	 	// }
 		// render just yourself if you're alone
-		if (avatarIds.length == 1) {
-			return;
-		}	
+		// if (avatarIds.length == 1) {
+		// 	return;
+		// }
 
      let cc = 0;
 
@@ -778,26 +778,19 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
            const rcontroller = avatar.rightController;
            const lcontroller = avatar.leftController;
 
-           let rPos = CG.add(headsetPos, nextRelativeRight);
-           let lPos = CG.add(headsetPos, nextRelativeLeft);
 
            m.save();
              m.translate(headsetPos[0], headsetPos[1], headsetPos[2]);
+             m.rotateQ(headsetRot);
              m.save();
-               m.rotateQ(headsetRot);
                m.scale(0.1,0.1,0.1);
                m.save();
                  drawShape(CG.cylinder, [0.2+cc,0.2+cc,0.4+cc]);
                m.restore();
              m.restore();
              m.save();
-               // NEED TO ROTATE WITH THE DIFFERENCE IN HEADSET ROTATIONS
-               // m.rotateQ(headsetRot);
-               // m.rotateQ(-nextHeadsetRot);
-               // drawSyncController(rPos, rcontroller.orientation, CURRENT_COLOR);
-               // drawSyncController(lPos, lcontroller.orientation, CURRENT_COLOR);
-               drawSyncController(rcontroller.position, rcontroller.orientation, CURRENT_COLOR);
-               drawSyncController(lcontroller.position, lcontroller.orientation, CURRENT_COLOR);
+               drawSyncController(nextRelativeRight, rcontroller.orientation, CURRENT_COLOR);
+               drawSyncController(nextRelativeLeft, lcontroller.orientation, CURRENT_COLOR);
              m.restore();
            m.restore();
         }
