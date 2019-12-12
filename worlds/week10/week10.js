@@ -50,11 +50,13 @@ function ControllerHandler(controller) {
    this.release     = () => wasDown && ! this.isDown();
    this.tip         = () => {
       let P = this.position();          // THIS CODE JUST MOVES
+      m.save();
       m.identity();                     // THE "HOT SPOT" OF THE
       m.translate(P[0],P[1],P[2]);      // CONTROLLER TOWARD ITS
       m.rotateQ(this.orientation());    // FAR TIP (FURTHER AWAY
       m.translate(0,0,-.03);            // FROM THE USER'S HAND).
       let v = m.value();
+      m.restore();
       return [v[12],v[13],v[14]];
    }
    this.center = () => {
@@ -295,11 +297,11 @@ function Obj(shape) {
    this.shape = shape;
 };
 
-const HALL_WIDTH       = 2;
-let BLOB_SIZE = .1;
+const HALL_WIDTH       = 1.4;
+let BLOB_SIZE = .45;
 let BLOB_LIFE = 300;
 let BIRTH_OFFSET = 150;
-let BLOB_COUNT = 20;
+let BLOB_COUNT = 4;
 let BLOB_COLORS = [
   [1,0,0],
   [0,1,0],
@@ -334,13 +336,14 @@ function Blob() {
   let setColor = () => {
     color = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
   };
+  this.makeTouched = () => { color = [0,0,0]; }
   this.getColor = () => { return color };
   this.getPos = () => { return position; };
   this.isAlive = (frame) => { return (frame >= birth && frame < death); }
   this.setup = (currentFrame) => {
     birth = currentFrame + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
     death = birth + BLOB_LIFE;
-    position = [0, HALL_WIDTH/2, 0];
+    // position = [0, HALL_WIDTH/2, 0];
     setPosition();
     setColor();
   }
@@ -515,6 +518,7 @@ function onStartFrame(t, state) {
    for(let i=0; i<BLOB_COUNT; i++) {
      let b = blobs[i];
      if(input.LC && b.isTouched(input)) {
+       b.makeTouched();
        console.log("touched");
      }
      if(!b.isAlive(state.frame)) {
@@ -660,26 +664,14 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
      let avatarIds = Object.keys( MR.avatars);
      avatarIds.sort();
 
-     // let myId = MR.playerid;
-     // let myIndex = avatarIds.indexOf(myId);
-     // let nextIndex = (myIndex+1) % avatarIds.length;
-     // let nextId = avatarIds[nextIndex];
-     // while(MR.avatars[nextId].mode != MR.UserType.vr) {
-     //   nextIndex = (nextIndex+1) % avatarIds.length;
-     //   nextId = avatarIds[nextIndex];
-     // }
-
      let cc = 0;
-     console.log(avatarIds);
-     for (let id in avatarIds) {
-       console.log("1ID " + id);
-     }
+
      for (let i=0; i<avatarIds.length; i++) {
         let id = avatarIds[i];
         let nextId = avatarIds[ (i+1) % avatarIds.length ];
         const avatar = MR.avatars[id];
         const nextAvatar = MR.avatars[nextId];
-        console.log("ID " + id + " NEXTID " + nextId);
+        // console.log("ID " + id + " NEXTID " + nextId);
 
         if (avatar.mode == MR.UserType.vr && nextAvatar.mode == MR.UserType.vr) {
            let headsetPos = avatar.headset.position;
@@ -692,6 +684,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
            }
 
            let nextHeadsetPos = nextAvatar.headset.position;
+           let nextHeadsetRot = nextAvatar.headset.position;
            let nextRcontroller = nextAvatar.rightController;
            let nextLcontroller = nextAvatar.leftController;
            let nextRelativeRight = CG.subtract(nextRcontroller.position, nextHeadsetPos);
@@ -713,6 +706,9 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
                m.restore();
              m.restore();
              m.save();
+               // NEED TO ROTATE WITH THE DIFFERENCE IN HEADSET ROTATIONS
+               // m.rotateQ(headsetRot);
+               // m.rotateQ(-nextHeadsetRot);
                drawSyncController(rPos, rcontroller.orientation, [0.2+cc,0.2+cc,0.4+cc]);
                drawSyncController(lPos, lcontroller.orientation, [0.2+cc,0.2+cc,0.4+cc]);
              m.restore();
