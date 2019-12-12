@@ -1,2 +1,9 @@
-* In order to start the backend, you need to execute 'run' or 'run.bat' depending on your OS
-* otherwise, you can call `pm2 stop all` / `pm2 restart all` should you encounter critical errors
+TODO:
+
+* don't render balls on ceiling or floor
+* render balls on a grid to prevent overlap, check to make sure ball is rendered in empty grid spot
+* add 'color checking' for the ball that is touched
+* add reaction for balls touched -- color should change, maybe a sound plays, ball disappears
+* show time running out
+* right now controllers change color to show the 'target color' -- should it stay like this, or something else?
+* visual improvements

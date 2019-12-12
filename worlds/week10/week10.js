@@ -527,7 +527,7 @@ function onStartFrame(t, state) {
    }
 
    if(state.frame % COLOR_TIME == 0) {
-     // updateColor();
+     updateColor();
    }
     /*-----------------------------------------------------------------
     This function releases stale locks. Stale locks are locks that
@@ -709,8 +709,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
                // NEED TO ROTATE WITH THE DIFFERENCE IN HEADSET ROTATIONS
                // m.rotateQ(headsetRot);
                // m.rotateQ(-nextHeadsetRot);
-               drawSyncController(rPos, rcontroller.orientation, [0.2+cc,0.2+cc,0.4+cc]);
-               drawSyncController(lPos, lcontroller.orientation, [0.2+cc,0.2+cc,0.4+cc]);
+               drawSyncController(rPos, rcontroller.orientation, CURRENT_COLOR);
+               drawSyncController(lPos, lcontroller.orientation, CURRENT_COLOR);
              m.restore();
            m.restore();
         }
