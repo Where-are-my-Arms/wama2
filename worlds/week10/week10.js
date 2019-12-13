@@ -296,12 +296,12 @@ This is an example of a spawn message we send to the server.
 function Obj(shape) {
    this.shape = shape;
 };
-
-const HALL_WIDTH       = 1.4;
-let BLOB_SIZE = .1;
+const SCALE = 0.25;
+const HALL_WIDTH = 10 * SCALE;
+let BLOB_SIZE = .4 * SCALE;
 let BLOB_LIFE = 700;
-let BIRTH_OFFSET = 5000;
-let BLOB_COUNT = 15;
+let BIRTH_OFFSET = 1000;
+let BLOB_COUNT = 30;
 let BLOB_COLORS = [
   [1,0,0],
   [0,1,0],
@@ -352,7 +352,7 @@ function Blob() {
 		let iz = Math.floor(Math.random() * nz) + 1;	
 
 		let px = ix * dx - (HALL_WIDTH / 2);
-		let py = iy * dy - HALL_WIDTH;
+		let py = iy * dy - EYE_HEIGHT/*- (HALL_WIDTH / 2)*/;
 		let pz = iz * dz - (HALL_WIDTH / 2);
 		pos = [px, py, pz];
 		//console.log([dx, dy, dz]);
@@ -369,7 +369,7 @@ function Blob() {
 			position = randomPosition();
 			break;
 		case FIXED:
-			position = fixedPositions(3, 3, 3);
+			position = fixedPositions(12, 12, 12);
 			break;
 		default:
 			position = fixedPositions(3, 3, 3);
@@ -392,7 +392,11 @@ function Blob() {
 	this.setRevived = () => {revived = true;};
 	this.setNotRevived = () => {revived = false;};
   this.setup = (currentFrame) => {
-    birth = currentFrame + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
+	if (currentFrame == 1) {
+    	birth = currentFrame + 1;
+	}else {
+    	birth = currentFrame + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
+	}
     death = birth + BLOB_LIFE;
 	wasTouched = false;
 	mode = FIXED;
@@ -713,8 +717,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       m.restore();
    }
 	
-	// Avatars with no Arm swapping
-	let drawNormalAvatars = () => {
+	let drawSelfAvatar = () => {
 
 		// Draw yourself
 		 if (input.LC) {
@@ -725,12 +728,16 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 			 m.rotateY(-state.turnAngle);
 			 m.rotateX(-state.tiltAngle);
 
-			 drawController(input.LC, 0, [0,0,0]);
-			 drawController(input.RC, 1, [0,0,0]);
+			 drawController(input.LC, 0, CURRENT_COLOR);
+			 drawController(input.RC, 1, CURRENT_COLOR);
 			 if (enableModeler && input.RC.isDown())
 				 showMenu(input.RC.position());
 			 m.restore();
 		 }
+	}
+	// Avatars with no Arm swapping
+	let drawNormalAvatars = () => {
+
 		for (let id in MR.avatars) {
 
       const avatar = MR.avatars[id];
@@ -845,14 +852,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
      }
    }
 
-
-   // m.translate(0, HALL_WIDTH/2-EYE_HEIGHT, 0);
-   m.save();
-		m.translate(0,-HALL_WIDTH/2,0)// translate so you're standing on the floor
-      m.scale(-HALL_WIDTH/2, -HALL_WIDTH/2, -HALL_WIDTH/2);
-      drawShape(CG.cube, [1,1,1]);
-   m.restore();
-
+	drawSelfAvatar();
    for(let i=0; i<BLOB_COUNT; i++) {
      let b = blobs[i];
      if(b.isAlive(state.frame)) {
@@ -865,7 +865,16 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
      }
    }
 
-   drawAvatars(); // avatars with arm swapping
+	m.translate(0, -EYE_HEIGHT, 0);
+   // m.translate(0, HALL_WIDTH/2-EYE_HEIGHT, 0);
+   m.save();
+	  m.translate(0,HALL_WIDTH/2,0)// translate so you're standing on the floor
+      m.scale(-HALL_WIDTH/2, -HALL_WIDTH/2, -HALL_WIDTH/2);
+      drawShape(CG.cube, [1,1,1]);
+   m.restore();
+
+
+   //drawAvatars(); // avatars with arm swapping
 	//drawNormalAvatars(); // no arm swapping
 
   //  m.save();
