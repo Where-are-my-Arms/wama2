@@ -7,3 +7,4 @@ TODO:
 * show time running out
 * right now controllers change color to show the 'target color' -- should it stay like this, or something else?
 * visual improvements
+* start game button, show score at end
