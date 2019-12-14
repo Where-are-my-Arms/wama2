@@ -64,7 +64,7 @@ parser.addArgument(
     [ "-t", "--tick" ],
     {
       help: "interval to broadcast server time 'tick' to clients (in ms)",
-      defaultValue: 2000
+      defaultValue: 20
     }
 );
 parser.addArgument(

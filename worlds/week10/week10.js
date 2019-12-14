@@ -20,10 +20,11 @@ const RANDOM = 100;
 const FIXED = 101;
 let enableModeler = true;
 let LOAD_TIME = -1;
-const LOAD_DURATION = 3000;
+const LOAD_DURATION = 1500;
 let PLAY_COLOR = [1,1,1];	
 let START_COLOR = [0.1,0.1,0.1];
 let ROOM_COLOR = START_COLOR;
+const PLAY_DURATION = 30000; // play time in milliseconds
 
 /*Example Grabble Object*/
 let grabbableCube = new Obj(CG.torus);
@@ -286,14 +287,14 @@ async function setup(state) {
    ************************************************************************/
 	MR.objs.push(bigButton);
 
-   MR.objs.push(grabbableCube);
+   //MR.objs.push(grabbableCube);
    grabbableCube.position    = [0,0,-0.5].slice();
    grabbableCube.orientation = [1,0,0,1].slice();
    grabbableCube.uid = 0;
    grabbableCube.lock = new Lock();
 	grabbableCube.birthTime = MR.tick;
 	grabbableCube.lifetime = 30000;
-   sendSpawnMessage(grabbableCube);
+   //sendSpawnMessage(grabbableCube);
 }
 
 /************************************************************************
@@ -328,6 +329,7 @@ let CURRENT_COLOR = BLOB_COLORS[0];
 let playSound = false;
 let soundPosition = [];
 let blobs = [];
+let timer;
 
 function updateColor() {
   CURRENT_COLOR = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)]
@@ -348,6 +350,18 @@ function BigButton(position, size, color) {
 		//let touched = (CG.distance(rPos, position) <= this.size);
 		this.wasTouched = touched;
 		return touched;
+	}
+}
+
+function Timer(dur) {
+	this.duration = dur;
+	let startTime;	
+	this.start = () => {
+		startTime = MR.tick;
+	}
+
+	this.timeLeft = () => {
+		return Math.max(0, startTime + this.duration - MR.tick);
 	}
 }
 
@@ -609,6 +623,8 @@ function onStartFrame(t, state) {
 	} else if (MODE == LOAD) {
 			ROOM_COLOR = [Math.max(0, ROOM_COLOR[0] - 0.001), Math.max(0,ROOM_COLOR[1] - 0.001), Math.max(0,ROOM_COLOR[2] - 0.001)];
 			if (MR.tick >= LOAD_TIME + LOAD_DURATION) {
+				timer = new Timer(PLAY_DURATION);
+				timer.start();
 				MODE = PLAY;
 				ROOM_COLOR = PLAY_COLOR;
 			}	
@@ -683,6 +699,22 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       prev_shape = shape;
    }
 
+	let drawTimer = (timer) => {
+		m.save();
+			 m.translate(0,3/4 * HALL_WIDTH,-0.9 * HALL_WIDTH/2);
+			m.rotateY(Math.PI/2);
+			 m.save();
+				 let tl = timer.timeLeft() / timer.duration;
+				 let tp = (timer.duration - timer.timeLeft()) / timer.duration;
+				 m.scale(TABLE_THICKNESS, TABLE_THICKNESS, 0.75 * HALL_WIDTH / 2 * (timer.timeLeft() / timer.duration));
+				 drawShape(CG.cylinder, [tp,tl,0]);
+			 m.restore();
+			 m.save();
+				 m.scale(TABLE_THICKNESS - 0.001, TABLE_THICKNESS - 0.001, 0.75 * HALL_WIDTH / 2);
+				 drawShape(CG.cylinder, [0.1,0.1,0.1]);
+			 m.restore();
+		m.restore();
+	}
 	let drawTable = (x, y) => {
 		m.save();
 			m.multiply(state.avatarMatrixForward);
@@ -1001,6 +1033,9 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 	m.translate(0, -EYE_HEIGHT, 0);
 	if (MODE == START) {
 		drawTable(0,0);
+	}
+	if (MODE == PLAY) {
+		drawTimer(timer);
 	}
    // m.translate(0, HALL_WIDTH/2-EYE_HEIGHT, 0);
    m.save();
