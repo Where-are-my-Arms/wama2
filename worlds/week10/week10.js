@@ -1,4 +1,5 @@
-"use strict" /*--------------------------------------------------------------------------------
+"use strict" 
+/*--------------------------------------------------------------------------------
 Note that I measured everything in inches, and then converted to units of meters
 (which is what VR requires) by multiplying by 0.0254.
 --------------------------------------------------------------------------------*/
@@ -284,6 +285,8 @@ async function setup(state) {
    grabbableCube.uid = 0;
    grabbableCube.lock = new Lock();
    sendSpawnMessage(grabbableCube);
+
+   insertBlobIntoMR();
 }
 
 /************************************************************************
@@ -317,113 +320,171 @@ function updateColor() {
   CURRENT_COLOR = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)]
 }
 
-
 function Blob() {
-  let position, color, birth, death, wasTouched, revived, mode;
-	let randomPosition = () => {
-		let pos;
-		let a = Math.random() * HALL_WIDTH - HALL_WIDTH/2;
-		let b = Math.random() * HALL_WIDTH - HALL_WIDTH/2;
-		let c = Math.random() < 0.5 ? -1 : 1;
-		let d = Math.random();
+   let uid, position, color, birth, death, wasTouched, revived, mode;
 
-		//position = [0,-HALL_WIDTH/2, 0];	
-		if(d<0.33) {
-		  pos = [a, b, c*HALL_WIDTH/2];
-		} else if (d<0.67) { pos = [a, c*HALL_WIDTH/2, b];
-		} else {
-		  pos = [c*HALL_WIDTH/2, a, b];
-		}
-		return pos
-	};
-	let fixedPositions = (nx, ny, nz) => {
-		// nx, ny, nz are the number of blobs you want in each direction
-		let pos;
-		let x = nx + 1;
-		let y = ny + 1;
-		let z = nz + 1;
-	
-		let dx = HALL_WIDTH / x;
-		let dy = HALL_WIDTH / y;
-		let dz = HALL_WIDTH / z;
+   let randomPosition = () => {
+      let pos;
+      let a = Math.random() * HALL_WIDTH - HALL_WIDTH / 2;
+      let b = Math.random() * HALL_WIDTH - HALL_WIDTH / 2;
+      let c = Math.random() < 0.5 ? -1 : 1;
+      let d = Math.random();
 
-		let ix = Math.floor(Math.random() * nx) + 1;	
-		let iy = Math.floor(Math.random() * ny) + 1;	
-		let iz = Math.floor(Math.random() * nz) + 1;	
+      //position = [0,-HALL_WIDTH/2, 0];	
+      if (d < 0.33) {
+         pos = [a, b, c * HALL_WIDTH / 2];
+      } else if (d < 0.67) {
+         pos = [a, c * HALL_WIDTH / 2, b];
+      } else {
+         pos = [c * HALL_WIDTH / 2, a, b];
+      }
+      return pos
+   };
+   let fixedPositions = (nx, ny, nz) => {
+      // nx, ny, nz are the number of blobs you want in each direction
+      let pos;
+      let x = nx + 1;
+      let y = ny + 1;
+      let z = nz + 1;
 
-		let px = ix * dx - (HALL_WIDTH / 2);
-		let py = iy * dy - HALL_WIDTH;
-		let pz = iz * dz - (HALL_WIDTH / 2);
-		pos = [px, py, pz];
-		//console.log([dx, dy, dz]);
-		//console.log([0,-HALL_WIDTH / 2, 0]);
-		//console.log(pos);
-		return pos;	
-	};
+      let dx = HALL_WIDTH / x;
+      let dy = HALL_WIDTH / y;
+      let dz = HALL_WIDTH / z;
 
-	let setPosition = () => {
-    // TODO: ensure that nothing on the ceiling, and on floor?
-    // TODO: ensure things are in reach
-		switch (mode) {
-		case RANDOM:
-			position = randomPosition();
-			break;
-		case FIXED:
-			position = fixedPositions(3, 3, 3);
-			break;
-		default:
-			position = fixedPositions(3, 3, 3);
-		}
-	}
-  let setColor = () => {
-    color = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
-  };
-  this.makeTouched = () => { 
-	color = [0,0,0]; 
-	wasTouched = true;
-	}
-  this.getColor = () => { return color };
-  this.getPos = () => { return position; };
-  this.isAlive = (frame) => { return (frame >= birth && frame < death); }
-	this.kill = (currentFrame) => {
-		death = currentFrame + 50;
-	};
-	this.revived = () => {return revived;};
-	this.setRevived = () => {revived = true;};
-	this.setNotRevived = () => {revived = false;};
-  this.setup = (currentFrame) => {
-    birth = currentFrame + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
-    death = birth + BLOB_LIFE;
-	wasTouched = false;
-	mode = FIXED;
-    // position = [0, HALL_WIDTH/2, 0];
-    setPosition();
-    setColor();
-  }
-	this.wasTouched = () => {
-		return wasTouched;
-	};
-  // THIS IS NOT WORKING
-  this.isTouched = (input) => {
-    let lPos = input.LC.tip();
-    let rPos = input.RC.tip();
-    // let touched = (CG.distance(lPos, position) <= BLOB_SIZE || CG.distance(rPos, position) <= BLOB_SIZE);
-    let touched = (CG.distance(rPos, position) <= BLOB_SIZE);
-    return touched;
-  }
-  this.isValid = () => { return (color[0] == CURRENT_COLOR[0] && color[1] == CURRENT_COLOR[1] && color[1] == CURRENT_COLOR[1]);};
+      let ix = Math.floor(Math.random() * nx) + 1;
+      let iy = Math.floor(Math.random() * ny) + 1;
+      let iz = Math.floor(Math.random() * nz) + 1;
+
+      let px = ix * dx - (HALL_WIDTH / 2);
+      let py = iy * dy - HALL_WIDTH;
+      let pz = iz * dz - (HALL_WIDTH / 2);
+      pos = [px, py, pz];
+      //console.log([dx, dy, dz]);
+      //console.log([0,-HALL_WIDTH / 2, 0]);
+      //console.log(pos);
+      return pos;
+   };
+
+   let setPosition = () => {
+      // TODO: ensure that nothing on the ceiling, and on floor?
+      // TODO: ensure things are in reach
+      switch (mode) {
+         case RANDOM:
+            position = randomPosition();
+            break;
+         case FIXED:
+            position = fixedPositions(3, 3, 3);
+            break;
+         default:
+            position = fixedPositions(3, 3, 3);
+      }
+   }
+   let setColor = () => {
+      color = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
+   };
+
+   this.load = (uidOri, positionOri, colorOri, birthOri, deathOri, wasTouchedOri, revivedOri, modeOri) => {
+       uid = uidOri;
+       position = positionOri;
+       color = colorOri;
+       birth = birthOri;
+       death = deathOri;
+       wasTouched = wasTouchedOri;
+       revived = revivedOri;
+       mode = modeOri;
+    }
+
+   this.makeTouched = () => {
+      color = [0, 0, 0];
+      wasTouched = true;
+   }
+
+   this.getUid = () => { return uid };
+   this.getColor = () => { return color };
+   this.getPos = () => { return position };
+   this.getBirth = () => { return birth };
+   this.getDeath = () => { return death };
+   this.getWasTouched = () => { return wasTouched };
+   this.getRevived = () => { return revived };
+   this.getMode = () => { return mode };
+   
+   this.setUid = (uidOri) => { uid = uidOri }
+   this.isAlive = (frame) => { return (frame >= birth && frame < death); };
+   this.kill = (currentFrame) => {
+      death = currentFrame + 50;
+   };
+   this.revived = () => { return revived; };
+   this.setRevived = () => { revived = true; };
+   this.setNotRevived = () => { revived = false; };
+   this.setup = (currentFrame) => {
+      birth = currentFrame + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
+      death = birth + BLOB_LIFE;
+      wasTouched = false;
+      mode = FIXED;
+      // position = [0, HALL_WIDTH/2, 0];
+      setPosition();
+      setColor();
+   }
+   this.wasTouched = () => {
+      return wasTouched;
+   };
+   // THIS IS NOT WORKING
+   this.isTouched = (input) => {
+      let lPos = input.LC.tip();
+      let rPos = input.RC.tip();
+      // let touched = (CG.distance(lPos, position) <= BLOB_SIZE || CG.distance(rPos, position) <= BLOB_SIZE);
+      let touched = (CG.distance(rPos, position) <= BLOB_SIZE);
+      return touched;
+   }
+   this.isValid = () => { return (color[0] == CURRENT_COLOR[0] && color[1] == CURRENT_COLOR[1] && color[1] == CURRENT_COLOR[1]); };
+} 
+
+// Insert blobs into MR only if client is with the smallest ID
+function checkBlobMaster() {
+   let blobMaster = true;
+   let playerID = MR.playerid;
+   let playermode;
+
+   for (let id in MR.avatars) {
+      const avatar = MR.avatars[id];
+      if (avatar.playerid == playerID) {
+         playermode = avatar.mode;
+         break;
+      }
+   }
+
+   for (let id in MR.avatars) {
+      const avatar = MR.avatars[id];
+      if ((avatar.playerid < playerID && avatar.mode == playermode) || 
+      (playermode != MR.UserType.vr && avatar.mode == MR.UserType.vr)) {
+         blobMaster = false;
+         break;
+      }
+   }
+   /*
+   if (blobMaster) {
+      console.log("this is the blob master");
+   } else {
+      console.log("this is not the blob master");
+   }
+   */
+   return blobMaster;
 }
 
-let blobs = [];
-for(let i=0;i<BLOB_COUNT; i++) {
-  let color = Math.floor(Math.random() * BLOB_COLORS.length);
-  let birth = Math.floor(Math.random() * 20);
-  let blob = new Blob();
-  blob.setup(1);
- blob.setRevived();
-  blobs.push(blob);
+function insertBlobIntoMR() {
+   if (checkBlobMaster()) {
+      for (let i = 0; i < BLOB_COUNT; i++) {
+         let color = Math.floor(Math.random() * BLOB_COLORS.length);
+         let birth = Math.floor(Math.random() * 20);
+         let blob = new Blob();
+         blob.setUid("blob" + i);
+         blob.setup(1);
+         blob.setRevived();
+         MR.blobs.push(blob);
+         sendSpawnBlobMessage(blob);
+      }
+   }
 }
-
 
 function sendSpawnMessage(object){
    const response =
@@ -439,6 +500,43 @@ function sendSpawnMessage(object){
 
    MR.syncClient.send(response);
 }
+
+function sendSpawnBlobMessage(blob) {
+   const response =
+   {
+      type: "spawnBlob",
+      uid: blob.getUid(),
+      lockid: -1,
+      state: {
+         position: blob.getPos(),
+         color: blob.getColor(),
+         birth: blob.getBirth(),
+         death: blob.getDeath(),
+         wasTouched: blob.getWasTouched(),
+         revived: blob.getRevived(),
+         mode: blob.getMode(),
+      }
+   };
+   MR.syncClient.send(response);
+}
+
+function sendUpdateBlobMessage(blob) {
+   const response =
+   {
+      type: "updateBlob",
+      uid: blob.getUid(),
+      lockid: -1,
+      state: {
+         position: blob.getPos(),
+         color: blob.getColor(),
+         birth: blob.getBirth(),
+         death: blob.getDeath(),
+         wasTouched: blob.getWasTouched(),
+         revived: blob.getRevived(),
+         mode: blob.getMode(),
+      }
+   };
+   MR.syncClient.send(response);}
 
 function onStartFrame(t, state) {
    // console.log("ONFRAMESTART, PLAYSOUND " + playSound);
@@ -557,26 +655,30 @@ function onStartFrame(t, state) {
       }
    }
 
-   for(let i=0; i<BLOB_COUNT; i++) {
-     let b = blobs[i];
-		if (b.isAlive(state.frame) && b.revived()){
-			b.setNotRevived();
-		}else if (!b.isAlive(state.frame) && !b.revived()) {
-			console.log("reviving\n");
-			b.setup(state.frame);
-			b.setRevived();
-		} else {
-		  if(input.LC && b.isAlive(state.frame) && !b.wasTouched() && b.isTouched(input) && b.isValid()) {
-			 playSound = true;
-			 soundPosition = b.getPos();
-			 //b.setup(state.frame+10);
-			 b.kill(state.frame);
-			 b.makeTouched();
-		  } 
-		}
-     /*if(!b.isAlive(state.frame)) {
-       b.setup(state.frame);
-     }*/
+   if (checkBlobMaster()) {
+      if (MR.blobs.length <= 0) {
+         insertBlobIntoMR();
+      }
+      for (let i = 0; i < MR.blobs.length; i++) {
+         let b = MR.blobs[i];
+         if (b.revived() && b.isAlive(state.frame)) {
+            b.setNotRevived();
+         } else if (!b.isAlive(state.frame) && !b.revived()) {
+            console.log("reviving\n");
+            b.setup(state.frame);
+            b.setRevived();
+         } else {
+            if (input.LC && b.isAlive(state.frame) && !b.wasTouched() && b.isTouched(input) && b.isValid()) {
+               playSound = true;
+               soundPosition = b.getPos();
+               //b.setup(state.frame+10);
+               b.kill(state.frame);
+               b.makeTouched();
+            }
+         }
+
+         sendUpdateBlobMessage(b);
+      }
    }
 
    if(state.frame % COLOR_TIME == 0) {
@@ -853,16 +955,18 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       drawShape(CG.cube, [1,1,1]);
    m.restore();
 
-   for(let i=0; i<BLOB_COUNT; i++) {
-     let b = blobs[i];
-     if(b.isAlive(state.frame)) {
-       let p = b.getPos();
-       m.save();
-        m.translate(p[0], p[1], p[2]);
-        m.scale(BLOB_SIZE, BLOB_SIZE, BLOB_SIZE);
-        drawShape(CG.sphere, b.getColor());
-       m.restore();
-     }
+   for (let id in MR.blobs) {
+      let b = MR.blobs[id];
+      // Replace below line to test wether the blobs are synced
+      // if (b.getRevived()) {
+      if (b.isAlive(state.frame)) {
+         let p = b.getPos();
+         m.save();
+         m.translate(p[0], p[1], p[2]);
+         m.scale(BLOB_SIZE, BLOB_SIZE, BLOB_SIZE);
+         drawShape(CG.sphere, b.getColor());
+         m.restore();
+      }
    }
 
    drawAvatars(); // avatars with arm swapping

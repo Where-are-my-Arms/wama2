@@ -265,6 +265,7 @@ MR.playerid = -1;
 MR.playerType = MR.UserType.browser;
 
 MR.objs = [];
+MR.blobs = [];
 
 window.onbeforeunload = function() {
     websocket.onclose = function () {}; // disable onclose handler first

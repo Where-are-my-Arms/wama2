@@ -322,7 +322,38 @@ try {
                     send(ws.index, -1, response);
                     console.log("object in use.");
                 }
+            } else if (json["type"] == "updateBlob") {
 
+                const key = json["uid"];
+                const lockid = json["lockid"];
+                const state = json["state"];
+
+                if(datastore.acquire(key, lockid)) {
+                    datastore.setObjectData(key, state);
+                    // console.log(datastore.state);
+
+                    // tell everyone else about this update
+                    // console.log("updateBlob key", key);
+                    const response = {
+                        "type": "updateBlob",
+                        "uid": key,
+                        "state": state,
+                        "lockid": lockid,
+                        "success": true
+                    };
+
+                    send("*", -1, response);
+                } else {
+                    // respond to sender only with failure, only need to indicate what uid is
+                    const response = {
+                        "type": "updateBlob",
+                        "uid": key,
+                        "success": false
+                    };
+
+                    send(ws.index, -1, response);
+                    console.log("object in use.");
+                }
             } else if(json["type"] == "spawn") {
                 // This depends on the spawn logic we want to add.
                 const key = json["uid"];
@@ -351,7 +382,33 @@ try {
                     };
                     send(ws.index, -1, response);
                 }
+            } else if (json["type"] == "spawnBlob") {
+                const key = json["uid"];
+                const lockid = json["lockid"];
+                const state = json["state"];
 
+                if (!datastore.exists(key)) {
+                    datastore.add(key);
+                    datastore.setObjectData(key, state);
+                    datastore.lock(key,lockid);
+
+                    const response = {
+                        "type": "spawnBlob",
+                        "uid": key,
+                        "state": state,
+                        "success": true
+                    }; //vel / acc , ...
+
+                    send("*", -1, response);
+
+                } else {
+                    const response = {
+                        "type": "spawnBlob",
+                        "uid": key,
+                        "success": false
+                    };
+                    send(ws.index, -1, response);
+                }
             } else if (json["type"] == "delete") {
 
                 const key = json["uid"];
