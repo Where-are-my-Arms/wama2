@@ -56,7 +56,8 @@ MR.syncClient.eventBus.subscribe("leave", (json) => {
 });
 
 MR.syncClient.eventBus.subscribe("tick", (json) => {
-    // console.log("world tick: ", json);
+    //console.log("world tick: ", json);
+	MR.tick = json["time"];
 });
 
 MR.syncClient.eventBus.subscribe("avatar", (json) => {

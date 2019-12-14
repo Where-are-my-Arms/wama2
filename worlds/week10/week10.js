@@ -12,13 +12,18 @@ const HALL_LENGTH      = inchesToMeters(306);
 const RING_RADIUS      = 0.0425;
 const TABLE_DEPTH      = inchesToMeters( 30);
 const TABLE_HEIGHT     = inchesToMeters( 29);
-const TABLE_WIDTH      = inchesToMeters( 60);
+const TABLE_WIDTH      = inchesToMeters( 90);
 const TABLE_THICKNESS  = inchesToMeters( 11/8);
 const LEG_THICKNESS    = inchesToMeters(  2.5);
 
 const RANDOM = 100;
 const FIXED = 101;
 let enableModeler = true;
+let LOAD_TIME = -1;
+const LOAD_DURATION = 3000;
+let PLAY_COLOR = [1,1,1];	
+let START_COLOR = [0.1,0.1,0.1];
+let ROOM_COLOR = START_COLOR;
 
 /*Example Grabble Object*/
 let grabbableCube = new Obj(CG.torus);
@@ -28,10 +33,12 @@ let lathe = CG.createMeshVertices(10, 16, CG.uvToLathe,
                CG.bezierToCubic([ 0.0, 0.5, 0.8, 1.1, 1.25, 1.4, 1.45, 1.55, 1.7 ,0.0]) ]);
 // let lathe = CG.cube;
 ////////////////////////////// SCENE SPECIFIC CODE
-
+const BUTTON = "button";
+const BLOB = "blob";
 const WOOD = 0,
       TILES = 1,
       NOISY_BUMP = 2;
+let bigButton = new BigButton([0,TABLE_HEIGHT - EYE_HEIGHT,0], 0.1, [1,0,0]);
 
 let noise = new ImprovedNoise();
 let m = new Matrix();
@@ -277,12 +284,15 @@ async function setup(state) {
    track of objects that need to be synchronized.
 
    ************************************************************************/
+	MR.objs.push(bigButton);
 
    MR.objs.push(grabbableCube);
    grabbableCube.position    = [0,0,-0.5].slice();
    grabbableCube.orientation = [1,0,0,1].slice();
    grabbableCube.uid = 0;
    grabbableCube.lock = new Lock();
+	grabbableCube.birthTime = MR.tick;
+	grabbableCube.lifetime = 30000;
    sendSpawnMessage(grabbableCube);
 }
 
@@ -307,16 +317,39 @@ let BLOB_COLORS = [
   [0,1,0],
   [0,0,1]
 ]
+const START = "Game Start";
+const PLAY = "Playing";
+const END = "Game End";
+const LOAD = "Game load (fades).)";
+let MODE = START;
 
 let COLOR_TIME = 400;
 let CURRENT_COLOR = BLOB_COLORS[0];
 let playSound = false;
 let soundPosition = [];
+let blobs = [];
 
 function updateColor() {
   CURRENT_COLOR = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)]
 }
 
+function BigButton(position, size, color) {
+	this.lock = new Lock();
+	this.position = position;
+	this.size = size;
+	this.color = color;	
+	this.type = BUTTON;
+	this.shape = CG.sphere;
+	this.wasTouched = false;
+	this.isTouched = (input) => {
+		let lPos = input.LC.tip();
+		let rPos = input.RC.tip();
+		let touched = (CG.distance(lPos, this.position) <= this.size || CG.distance(rPos, this.position) <= this.size);
+		//let touched = (CG.distance(rPos, position) <= this.size);
+		this.wasTouched = touched;
+		return touched;
+	}
+}
 
 function Blob() {
   let position, color, birth, death, wasTouched, revived, mode;
@@ -378,6 +411,7 @@ function Blob() {
   let setColor = () => {
     color = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
   };
+	this.type = BLOB;
   this.makeTouched = () => { 
 	color = [0,0,0]; 
 	wasTouched = true;
@@ -418,15 +452,6 @@ function Blob() {
   this.isValid = () => { return (color[0] == CURRENT_COLOR[0] && color[1] == CURRENT_COLOR[1] && color[1] == CURRENT_COLOR[1]);};
 }
 
-let blobs = [];
-for(let i=0;i<BLOB_COUNT; i++) {
-  let color = Math.floor(Math.random() * BLOB_COLORS.length);
-  let birth = Math.floor(Math.random() * 20);
-  let blob = new Blob();
-  blob.setup(1);
- blob.setRevived();
-  blobs.push(blob);
-}
 
 
 function sendSpawnMessage(object){
@@ -435,9 +460,12 @@ function sendSpawnMessage(object){
          type: "spawn",
          uid: object.uid,
          lockid: -1,
+			frameLockid: -2,
          state: {
             position: object.position,
             orientation: object.orientation,
+				birthTime: object.birthTime,
+				lifetime: object.lifetime,
          }
       };
 
@@ -474,6 +502,8 @@ function onStartFrame(t, state) {
          state.calibrate = m.value().slice();
       }
    }
+
+	//console.log(MR);
 
    if (! state.tStart)
       state.tStart = t;
@@ -560,28 +590,48 @@ function onStartFrame(t, state) {
          }
       }
    }
-
-   for(let i=0; i<BLOB_COUNT; i++) {
-     let b = blobs[i];
-		if (b.isAlive(state.frame) && b.revived()){
-			b.setNotRevived();
-		}else if (!b.isAlive(state.frame) && !b.revived()) {
-			console.log("reviving\n");
-			b.setup(state.frame);
-			b.setRevived();
-		} else {
-		  if(input.LC && b.isAlive(state.frame) && !b.wasTouched() && b.isTouched(input) && b.isValid()) {
-			 playSound = true;
-			 soundPosition = b.getPos();
-			 //b.setup(state.frame+10);
-			 b.kill(state.frame);
-			 b.makeTouched();
-		  } 
+	if (MODE == START) { 
+		if (input.LC && !bigButton.wasTouched && bigButton.isTouched(input)) {
+			// more reaction to being touched? e.g. button lights up
+			console.log("Big button touched.");
+			MODE = LOAD;
+			LOAD_TIME = MR.tick;
+			// set the blobs up for the first time
+			for(let i=0;i<BLOB_COUNT; i++) {
+			  let color = Math.floor(Math.random() * BLOB_COLORS.length);
+			  let birth = Math.floor(Math.random() * 20);
+			  let blob = new Blob();
+			  blob.setup(state.frame);
+			 blob.setRevived();
+			  blobs.push(blob);
+			}
 		}
-     /*if(!b.isAlive(state.frame)) {
-       b.setup(state.frame);
-     }*/
-   }
+	} else if (MODE == LOAD) {
+			ROOM_COLOR = [Math.max(0, ROOM_COLOR[0] - 0.001), Math.max(0,ROOM_COLOR[1] - 0.001), Math.max(0,ROOM_COLOR[2] - 0.001)];
+			if (MR.tick >= LOAD_TIME + LOAD_DURATION) {
+				MODE = PLAY;
+				ROOM_COLOR = PLAY_COLOR;
+			}	
+	} else if (MODE == PLAY) {
+		for(let i=0; i<BLOB_COUNT; i++) {
+		  let b = blobs[i];
+			if (b.isAlive(state.frame) && b.revived()){
+				b.setNotRevived();
+			}else if (!b.isAlive(state.frame) && !b.revived()) {
+				console.log("reviving\n");
+				b.setup(state.frame);
+				b.setRevived();
+			} else {
+			  if(input.LC && b.isAlive(state.frame) && !b.wasTouched() && b.isTouched(input) && b.isValid()) {
+				 playSound = true;
+				 soundPosition = b.getPos();
+				 //b.setup(state.frame+10);
+				 b.kill(state.frame);
+				 b.makeTouched();
+			  } 
+			}
+		}
+	}
 
    if(state.frame % COLOR_TIME == 0) {
      updateColor();
@@ -632,6 +682,32 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       gl.drawArrays(shape == CG.cube ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
       prev_shape = shape;
    }
+
+	let drawTable = (x, y) => {
+		m.save();
+			m.multiply(state.avatarMatrixForward);
+			m.translate(x,y,0);
+			m.save();
+				m.translate(0, TABLE_HEIGHT + TABLE_THICKNESS / 4, 0);
+				m.rotateX(Math.PI / 2);
+				m.scale(TABLE_DEPTH/6, TABLE_DEPTH / 6, TABLE_THICKNESS / 4);
+				drawShape(CG.cylinder, [0.1,0.1,0.1]);
+			m.restore();
+			m.save();
+				m.translate(0, TABLE_HEIGHT - TABLE_THICKNESS / 2, 0);
+				m.rotateX(Math.PI / 2);
+				m.scale(TABLE_DEPTH/2, TABLE_DEPTH / 2, TABLE_THICKNESS / 2);
+				drawShape(CG.cylinder, [0.,0.,0.]);
+			m.restore();
+			m.save();
+				let h = TABLE_HEIGHT - TABLE_THICKNESS;
+				m.translate(0, h / 2, 0);
+				m.rotateX(Math.PI / 2);
+				m.scale(TABLE_THICKNESS,TABLE_THICKNESS, h / 2);
+				drawShape(CG.cylinder, [1, 1, 1]);
+			m.restore();
+		m.restore();
+	}
 
    let drawHeadset = (position, orientation) => {
       //  let P = HS.position();'
@@ -853,29 +929,89 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
    }
 
 	drawSelfAvatar();
-   for(let i=0; i<BLOB_COUNT; i++) {
-     let b = blobs[i];
-     if(b.isAlive(state.frame)) {
-       let p = b.getPos();
-       m.save();
-        m.translate(p[0], p[1], p[2]);
-        m.scale(BLOB_SIZE, BLOB_SIZE, BLOB_SIZE);
-        drawShape(CG.sphere, b.getColor());
-       m.restore();
-     }
+
+
+	let drawBlob = (b) => {
+		  if(b.isAlive(state.frame)) {
+			 let p = b.getPos();
+			 m.save();
+			  m.translate(p[0], p[1], p[2]);
+			  m.scale(BLOB_SIZE, BLOB_SIZE, BLOB_SIZE);
+			  drawShape(CG.sphere, b.getColor());
+			 m.restore();
+		  }
+	}
+
+	let drawButton = (button) => {
+		let P = button.position;
+		m.save();
+			m.translate(P[0], P[1], P[2]);
+			m.scale(button.size, button.size, button.size);
+			drawShape(button.shape, button.color);
+		m.restore();
+	}
+
+	let drawObject = (obj) => {
+		let p = obj.position;
+		m.save();
+			m.multiply(state.avatarMatrixForward);
+			m.translate(P[0], P[1], P[2]);
+			m.rotateQ(obj.orientation);
+			m.scale(.03,.03,.03);
+			drawShape(obj.shape, [1,1,1]);
+		m.restore();
+	}
+
+	if (MODE == PLAY) {
+		for(let i=0; i<BLOB_COUNT; i++) {
+		  let b = blobs[i];
+		  if(b.isAlive(state.frame)) {
+			 let p = b.getPos();
+			 m.save();
+			  m.translate(p[0], p[1], p[2]);
+			  m.scale(BLOB_SIZE, BLOB_SIZE, BLOB_SIZE);
+			  drawShape(CG.sphere, b.getColor());
+			 m.restore();
+		  }
+		}
+	}
+
+	for (let n = 0 ; n < MR.objs.length ; n++) {
+      let obj = MR.objs[n];
+		if (typeof obj.type == 'undefined') {
+			drawObject(obj);
+		} else {
+			switch(obj.type) {
+				case BLOB:
+					if (MODE == PLAY) {
+						drawBlob(obj);
+					}
+					break;
+				case BUTTON:
+					//:wconsole.log("drawing button");
+					if (MODE == START) {
+						drawButton(obj);
+					}
+					break;
+				default:
+			}
+		}
    }
 
 	m.translate(0, -EYE_HEIGHT, 0);
+	if (MODE == START) {
+		drawTable(0,0);
+	}
    // m.translate(0, HALL_WIDTH/2-EYE_HEIGHT, 0);
    m.save();
 	  m.translate(0,HALL_WIDTH/2,0)// translate so you're standing on the floor
       m.scale(-HALL_WIDTH/2, -HALL_WIDTH/2, -HALL_WIDTH/2);
-      drawShape(CG.cube, [1,1,1]);
+      drawShape(CG.cube, ROOM_COLOR);
    m.restore();
 
 
    //drawAvatars(); // avatars with arm swapping
-	//drawNormalAvatars(); // no arm swapping
+	drawNormalAvatars(); // no arm swapping
 
   //  m.save();
   //   m.translate(0,0,-0.3);
