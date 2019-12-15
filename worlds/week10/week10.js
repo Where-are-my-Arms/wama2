@@ -652,16 +652,6 @@ function onStartFrame(t, state) {
    if(state.frame % COLOR_TIME == 0) {
      updateColor();
    }
-    /*-----------------------------------------------------------------
-    This function releases stale locks. Stale locks are locks that
-    a user has already lost ownership over by letting go
-    -----------------------------------------------------------------*/
-    releaseLocks(state);
-    /*-----------------------------------------------------------------
-    This function checks for intersection and if user has ownership over
-    object then sends a data stream of position and orientation.
-    -----------------------------------------------------------------*/
-    pollGrab(state);
 }
 
 
@@ -1154,49 +1144,4 @@ function calcBoundingBox(verts) {
    }
 
    return [min, max];
-}
-
-function pollGrab(state) {
-   let input = state.input;
-   if ((input.LC && input.LC.isDown()) || (input.RC && input.RC.isDown())) {
-
-      let controller = input.LC.isDown() ? input.LC : input.RC;
-      for (let i = 0; i < MR.objs.length; i++) {
-         //ALEX: Check if grabbable.
-         let isGrabbed = checkIntersection(controller.position(), MR.objs[i].shape);
-         //requestLock(MR.objs[i].uid);
-         if (isGrabbed == true) {
-            if (MR.objs[i].lock.locked) {
-               MR.objs[i].position = controller.position();
-               const response =
-               {
-                  type: "object",
-                  uid: MR.objs[i].uid,
-                  state: {
-                     position: MR.objs[i].position,
-                     orientation: MR.objs[i].orientation,
-                  },
-                  lockid: MR.playerid,
-
-               };
-
-               MR.syncClient.send(response);
-            } else {
-               MR.objs[i].lock.request(MR.objs[i].uid);
-            }
-         }
-      }
-   }
-}
-
-function releaseLocks(state) {
-   let input = state.input;
-   if ((input.LC && !input.LC.isDown()) && (input.RC && !input.RC.isDown())) {
-      for (let i = 0; i < MR.objs.length; i++) {
-         if (MR.objs[i].lock.locked == true) {
-            MR.objs[i].lock.locked = false;
-            MR.objs[i].lock.release(MR.objs[i].uid);
-         }
-      }
-   }
 }
