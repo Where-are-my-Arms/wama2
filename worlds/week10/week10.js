@@ -1033,7 +1033,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 	}
 
 	//drawSelfAvatar(CURRENT_COLOR);
-	//drawSelfAvatar([1,1,1]); // drawing real self for debugging here.
+	drawSelfAvatar([1,1,1]); // drawing real self for debugging here.
 
 
 	let drawBlob = (b) => {
