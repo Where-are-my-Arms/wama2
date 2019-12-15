@@ -10,3 +10,6 @@ TODO:
 * start game button
 * show score at end
 * add tick-tock back ground sound?
+* deal with calibration
+* Detect blob interactions based on controller position after swap
+* Integrate arms Atom provided
