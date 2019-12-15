@@ -37,8 +37,12 @@ let lathe = CG.createMeshVertices(10, 16, CG.uvToLathe,
 const BUTTON = "button";
 const BLOB = "blob";
 const WOOD = 0,
-      TILES = 1,
-      NOISY_BUMP = 2;
+   TILES = 1,
+   NOISY_BUMP = 2,
+   VR_Base_Color = 3,
+   Pikachu0 = 4,
+   Pikachu1 = 5;
+
 let bigButton = new BigButton([0,TABLE_HEIGHT - EYE_HEIGHT,0], 0.1, [1,0,0]);
 
 let noise = new ImprovedNoise();
@@ -144,7 +148,10 @@ async function setup(state) {
    const images = await imgutil.loadImagesPromise([
       getPath("textures/wood.png"),
       getPath("textures/tiles.jpg"),
-      getPath("textures/noisy_bump.jpg")
+      getPath("textures/noisy_bump.jpg"),
+      getPath("textures/VR_Base_Color.png"),
+      getPath("textures/pikachu_eye_high.png"),
+      getPath("textures/pikachu_body_high.png"),
    ]);
 
    let libSources = await MREditor.loadAndRegisterShaderLibrariesForLiveEditing(gl, "libs", [
