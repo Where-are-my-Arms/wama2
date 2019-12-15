@@ -33,10 +33,12 @@ let lathe = CG.createMeshVertices(10, 16, CG.uvToLathe,
                CG.bezierToCubic([ 0.0, 0.5, 0.8, 1.1, 1.25, 1.4, 1.45, 1.55, 1.7 ,0.0]) ]);
 // let lathe = CG.cube;
 ////////////////////////////// SCENE SPECIFIC CODE
-
 const WOOD = 0,
       TILES = 1,
-      NOISY_BUMP = 2;
+      NOISY_BUMP = 2,
+      VR_Base_Color = 3,
+      Pikachu0 = 4,
+      Pikachu1 = 5;
 
 let noise = new ImprovedNoise();
 let m = new Matrix();
@@ -157,7 +159,10 @@ async function setup(state) {
    const images = await imgutil.loadImagesPromise([
       getPath("textures/wood.png"),
       getPath("textures/tiles.jpg"),
-      getPath("textures/noisy_bump.jpg")
+      getPath("textures/noisy_bump.jpg"),
+      getPath("textures/VR_Base_Color.png"),
+      getPath("textures/pikachu_eye_high.png"),
+      getPath("textures/pikachu_body_high.png"),
    ]);
 
    let libSources = await MREditor.loadAndRegisterShaderLibrariesForLiveEditing(gl, "libs", [
@@ -571,10 +576,24 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
     this if you create other kinds of shapes that are not triangle strips.
 
     -----------------------------------------------------------------*/
+    let myDrawShape = (color, type, vertices, texture, textureScale) => {
+        //gl.uniform3fv(state.uColorLoc, color);
+        gl.uniform4fv(state.uColorLoc, color.length == 4 ? color : color.concat([1]));
+        gl.uniformMatrix4fv(state.uModelLoc, false, m.value());
+        gl.uniform1i(state.uTexIndexLoc, texture === undefined ? -1 : texture);
+        gl.uniform1f(state.uTexScale, textureScale === undefined ? 1 : textureScale);
+        if (vertices != prev_shape)
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        gl.drawArrays(type, 0, vertices.length / VERTEX_SIZE);
+        prev_shape = vertices;
+    }
 
-   let drawShape = (shape, color, texture, textureScale) => {
+
+   let drawShape = (shape, color, texture, textureScale, flag) => {
       gl.uniform4fv(state.uColorLoc, color.length == 4 ? color : color.concat([1]));
       gl.uniformMatrix4fv(state.uModelLoc, false, m.value());
+      if(flag === undefined) flag = false;
+      if(shape == CG.cube) flag = true;
       gl.uniform1i(state.uTexIndexLoc, texture === undefined ? -1 : texture);
       gl.uniform1f(state.uTexScale, textureScale === undefined ? 1 : textureScale);
       if (shape != prev_shape)
@@ -582,11 +601,11 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
       if (state.isToon) {
          gl.uniform1f (state.uToonLoc, .3 * CG.norm(m.value().slice(0,3)));
          gl.cullFace(gl.FRONT);
-         gl.drawArrays(shape == CG.cube ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
+         gl.drawArrays(flag? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
          gl.cullFace(gl.BACK);
          gl.uniform1f (state.uToonLoc, 0);
       }
-      gl.drawArrays(shape == CG.cube ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
+      gl.drawArrays(flag ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
       prev_shape = shape;
    }
 
@@ -596,7 +615,9 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
          m.translate(pos[0],pos[1],pos[2]);
          m.rotateQ(rot);
          m.scale(scale,scale,scale);
-         drawShape(avatar.headset.vertices, [1,1,1], 0);
+         drawShape(MOD.VR_simple, [1,1,1],VR_Base_Color,1.,true);
+         //myDrawShape([1,1,1], gl.TRIANGLES, MOD.VR_simple, VR_Base_Color);
+        // drawShape(avatar.headset.vertices, [1,1,1], 0);
       m.restore();
    }
 
@@ -673,17 +694,7 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
          m.translate(P[0],P[1],P[2]);
          m.rotateQ(orientation);
          m.scale(.1);
-         m.save();
-            m.scale(1,1.5,1);
-            drawShape(CG.sphere, [0,0,0]);
-         m.restore();
-         for (let s = -1 ; s <= 1 ; s += 2) {
-            m.save();
-               m.translate(s*.4,.2,-.8);
-               m.scale(.4,.4,.1);
-               drawShape(CG.sphere, [10,10,10]);
-            m.restore();
-         }
+         drawShape(MOD.VR_simple, [1,1,1],VR_Base_Color,1.,true);
       m.restore();
    }
 
@@ -695,6 +706,9 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
          m.rotateQ(C.orientation());
          m.translate(0,.02,-.005);
          m.rotateX(.75);
+         //myDrawShape();
+         //myDrawShape([1,.5,.3], gl.TRIANGLES, CG.l_arm_hold, 0);
+         drawShape(MOD.left_hand, [1,1,1],-1,1.,true);
          m.save();
             m.translate(0,0,-.0095).scale(.004,.004,.003);
             drawShape(CG.sphere, C.isDown() ? [10,0,0] : [.5,0,0]);
@@ -816,7 +830,17 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
    m.restore();
 
    // DRAW TEST SHAPE
-
+   m.save();
+    //m.translate(0,-2,-5);
+    m.translate(0,1,-3);
+    m.scale(.1,.1,.1);
+    m.rotateY(state.time);
+    //drawShape(MOD.VR_simple, [1,1,1], VR_Base_Color,[1,1,1],true);
+    //myDrawShape([1, 1, 1], gl.TRIANGLES, pikachuVertices2, 2);
+    drawShape(MOD.VR_simple, [1,1,1],VR_Base_Color,1.,true);
+    //drawShape(MOD.pikachu1,[1,1,1],Pikachu1,1.,true);
+    m.restore();
+   //myDrawShape([1, 1, 1], gl.TRIANGLES, pikachuVertices, -1);
    m.save();
       m.translate(0, 2 * TABLE_HEIGHT, (TABLE_DEPTH - HALL_WIDTH) / 2);
       //m.aimZ([Math.cos(state.time),Math.sin(state.time),0]);
@@ -854,14 +878,20 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
          D = CG.mix(A,C,.5);
          m.translate(D[0],D[1],D[2]);
          m.aimZ(CG.subtract(A,C));
-         m.scale(.05,.05,.37);
-         drawShape(lathe, skinColor, -1,1, 2,1);
+         m.scale(.05,.05,.05);
+         //drawShape(lathe, skinColor, -1,1, 2,1);
+         //mydrawShape(skinColor,gl.)
+
+         m.rotateY(state.time);
+         myDrawShape([1,.5,.3], gl.TRIANGLES, CG.l_arm_hold, 0);
+         
       m.restore();
 
       m.save();
+
          D = CG.mix(C,B,.5);
          m.translate(D[0],D[1],D[2]).aimZ(CG.subtract(C,B)).scale(.03,.03,.37);
-         drawShape(lathe, skinColor, -1,1, 2,1);
+         drawShape(lathe, [1,1,1], 3, [1, 1,1]);
       m.restore();
       state.isToon = false;
 
@@ -1050,3 +1080,5 @@ function releaseLocks(state) {
       }
    }
 }
+
+
