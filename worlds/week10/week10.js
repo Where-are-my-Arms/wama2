@@ -455,12 +455,11 @@ function Blob() {
 	this.wasTouched = () => {
 		return wasTouched;
 	};
-  // THIS IS NOT WORKING
   this.isTouched = (input) => {
     let lPos = input.LC.tip();
     let rPos = input.RC.tip();
-    // let touched = (CG.distance(lPos, position) <= BLOB_SIZE || CG.distance(rPos, position) <= BLOB_SIZE);
-    let touched = (CG.distance(rPos, position) <= BLOB_SIZE);
+    let touched = (CG.distance(lPos, position) <= BLOB_SIZE || CG.distance(rPos, position) <= BLOB_SIZE);
+    // let touched = (CG.distance(rPos, position) <= BLOB_SIZE);
     return touched;
   }
   this.isValid = () => { return (color[0] == CURRENT_COLOR[0] && color[1] == CURRENT_COLOR[1] && color[1] == CURRENT_COLOR[1]);};
