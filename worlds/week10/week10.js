@@ -666,38 +666,38 @@ function onStartFrame(t, state) {
 
 
 function onDraw(t, projMat, viewMat, state, eyeIdx) {
-  // console.log("ONFDRAW, PLAYSOUND " + playSound);
-   m.identity();
-   m.rotateX(state.tiltAngle);
-   m.rotateY(state.turnAngle);
-   let P = state.position;
-   m.translate(P[0],P[1],P[2]);
+	// console.log("ONFDRAW, PLAYSOUND " + playSound);
+	m.identity();
+	m.rotateX(state.tiltAngle);
+	m.rotateY(state.turnAngle);
+	let P = state.position;
+	m.translate(P[0],P[1],P[2]);
 
-   viewMat = CG.matrixMultiply(viewMat, state.avatarMatrixInverse);
-   gl.uniformMatrix4fv(state.uViewLoc, false, new Float32Array(viewMat));
-   gl.uniformMatrix4fv(state.uProjLoc, false, new Float32Array(projMat));
+	viewMat = CG.matrixMultiply(viewMat, state.avatarMatrixInverse);
+	gl.uniformMatrix4fv(state.uViewLoc, false, new Float32Array(viewMat));
+	gl.uniformMatrix4fv(state.uProjLoc, false, new Float32Array(projMat));
 
-   let prev_shape = null;
+	let prev_shape = null;
 
-   const input  = state.input;
+	const input  = state.input;
 
-   let drawShape = (shape, color, texture, textureScale) => {
-      gl.uniform4fv(state.uColorLoc, color.length == 4 ? color : color.concat([1]));
-      gl.uniformMatrix4fv(state.uModelLoc, false, m.value());
-      gl.uniform1i(state.uTexIndexLoc, texture === undefined ? -1 : texture);
-      gl.uniform1f(state.uTexScale, textureScale === undefined ? 1 : textureScale);
-      if (shape != prev_shape)
-         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array( shape ), gl.STATIC_DRAW);
-      if (state.isToon) {
-         gl.uniform1f (state.uToonLoc, .3 * CG.norm(m.value().slice(0,3)));
-         gl.cullFace(gl.FRONT);
-         gl.drawArrays(shape == CG.cube ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
-         gl.cullFace(gl.BACK);
-         gl.uniform1f (state.uToonLoc, 0);
-      }
-      gl.drawArrays(shape == CG.cube ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
-      prev_shape = shape;
-   }
+	let drawShape = (shape, color, texture, textureScale) => {
+		gl.uniform4fv(state.uColorLoc, color.length == 4 ? color : color.concat([1]));
+		gl.uniformMatrix4fv(state.uModelLoc, false, m.value());
+		gl.uniform1i(state.uTexIndexLoc, texture === undefined ? -1 : texture);
+		gl.uniform1f(state.uTexScale, textureScale === undefined ? 1 : textureScale);
+		if (shape != prev_shape)
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array( shape ), gl.STATIC_DRAW);
+		if (state.isToon) {
+			gl.uniform1f (state.uToonLoc, .3 * CG.norm(m.value().slice(0,3)));
+			gl.cullFace(gl.FRONT);
+			gl.drawArrays(shape == CG.cube ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
+			gl.cullFace(gl.BACK);
+			gl.uniform1f (state.uToonLoc, 0);
+		}
+		gl.drawArrays(shape == CG.cube ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
+		prev_shape = shape;
+	}
 
 	let drawTimer = (timer) => {
 		m.save();
@@ -715,6 +715,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 			 m.restore();
 		m.restore();
 	}
+
 	let drawTable = (x, y) => {
 		m.save();
 			m.multiply(state.avatarMatrixForward);
@@ -795,178 +796,212 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       m.restore();
    }
 
-   let drawSyncController = (pos, rot, color) => {
-      let P = pos;
-      m.save();
-      // m.identity();
-         m.translate(P[0], P[1], P[2]);
-         m.rotateQ(rot);
-         m.translate(0,.02,-.005);
-         m.rotateX(.75);
-         m.save();
-               m.translate(0,0,-.0095).scale(.004,.004,.003);
-         m.restore();
-         m.save();
-               m.translate(0,0,-.01).scale(.04,.04,.13);
-               drawShape(CG.torus1, color);
-         m.restore();
-         m.save();
-               m.translate(0,-.0135,-.008).scale(.04,.0235,.0015);
-               drawShape(CG.cylinder, color);
-         m.restore();
-         m.save();
-               m.translate(0,-.01,.03).scale(.012,.02,.037);
-               drawShape(CG.cylinder, color);
-         m.restore();
-         m.save();
-               m.translate(0,-.01,.067).scale(.012,.02,.023);
-               drawShape(CG.sphere, color);
-         m.restore();
-      m.restore();
-   }
+   let drawSyncController = (pos, rot, color, yAngle) => {
+		let P = pos;
+		m.save();
+			// m.identity();
+			m.translate(P[0], P[1], P[2]);
+			if (typeof yAngle !== 'undefined') {
+				m.rotateY(yAngle);
+			}
+			m.rotateQ(rot);
+			m.translate(0,.02,-.005);
+			m.rotateX(.75);
+			m.save();
+				m.translate(0,0,-.0095).scale(.004,.004,.003);
+			m.restore();
+			m.save();
+				m.translate(0,0,-.01).scale(.04,.04,.13);
+				drawShape(CG.torus1, color);
+			m.restore();
+			m.save();
+				m.translate(0,-.0135,-.008).scale(.04,.0235,.0015);
+				drawShape(CG.cylinder, color);
+			m.restore();
+			m.save();
+				m.translate(0,-.01,.03).scale(.012,.02,.037);
+				drawShape(CG.cylinder, color);
+			m.restore();
+			m.save();
+				m.translate(0,-.01,.067).scale(.012,.02,.023);
+				drawShape(CG.sphere, color);
+			m.restore();
+		m.restore();
+	}
 
 	// Draw your real self
 	let drawSelfAvatar = (color) => {
-
 		// Draw yourself
-		 if (input.LC) {
-			 m.save();
-
-			 let P = state.position;
-			 m.translate(-P[0],-P[1],-P[2]);
-			 m.rotateY(-state.turnAngle);
-			 m.rotateX(-state.tiltAngle);
-
-			 drawController(input.LC, 0, color);
-			 drawController(input.RC, 1, color);
-			 if (enableModeler && input.RC.isDown())
-				 showMenu(input.RC.position());
-			 m.restore();
-		 }
+		if (input.LC) {
+			let P = state.position;
+			m.save();
+				m.translate(-P[0],-P[1],-P[2]);
+				m.rotateY(-state.turnAngle);
+				m.rotateX(-state.tiltAngle);
+				drawController(input.LC, 0, color);
+				drawController(input.RC, 1, color);
+			m.restore();
+		}
 	}
+
 	// Avatars with no Arm swapping
 	let drawNormalAvatars = () => {
-
 		for (let id in MR.avatars) {
+			const avatar = MR.avatars[id];
 
-      const avatar = MR.avatars[id];
+			if (avatar.mode == MR.UserType.vr) {
+				if (MR.playerid == avatar.playerid)
+					continue;
 
-      if (avatar.mode == MR.UserType.vr) {
-         if (MR.playerid == avatar.playerid)
-            continue;
+				let headsetPos = avatar.headset.position;
+				let headsetRot = avatar.headset.orientation;
 
-         let headsetPos = avatar.headset.position;
-         let headsetRot = avatar.headset.orientation;
+				if(headsetPos == null || headsetRot == null)
+				continue;
 
-         if(headsetPos == null || headsetRot == null)
-            continue;
+				if (typeof headsetPos == 'undefined') {
+					console.log(id);
+					console.log("not defined");
+				}
 
-         if (typeof headsetPos == 'undefined') {
-            console.log(id);
-            console.log("not defined");
-         }
+				const rcontroller = avatar.rightController;
+				const lcontroller = avatar.leftController;
 
-         const rcontroller = avatar.rightController;
-         const lcontroller = avatar.leftController;
+				let hpos = headsetPos.slice();
+				hpos[1] += EYE_HEIGHT;
 
-         let hpos = headsetPos.slice();
-         hpos[1] += EYE_HEIGHT;
+				drawHeadset(hpos, headsetRot);
+				let lpos = lcontroller.position.slice();
+				lpos[1] += EYE_HEIGHT;
+				let rpos = rcontroller.position.slice();
+				rpos[1] += EYE_HEIGHT;
 
-         drawHeadset(hpos, headsetRot);
-         //drawFakeHeadset([hpos[0], hpos[1] + EYE_HEIGHT, hpos[2]]);
-         let lpos = lcontroller.position.slice();
-         lpos[1] += EYE_HEIGHT;
-         let rpos = rcontroller.position.slice();
-         rpos[1] += EYE_HEIGHT;
+				drawSyncController(rpos, rcontroller.orientation, [1,0,0]);
+				drawSyncController(lpos, lcontroller.orientation, [0,1,1]);
+			}
+		}
+	}
+	
+	let drawSwappedAvatar = (avatar, nextAvatar, cc) => {
+		let headsetPos = avatar.headset.position; let headsetRot = avatar.headset.orientation;
+		if(headsetPos == null || headsetRot == null)
+		return;
+		if (typeof headsetPos == 'undefined') {
+		console.log(id);
+		console.log("not defined");
+		}
 
-         drawSyncController(rpos, rcontroller.orientation, [1,0,0]);
-         drawSyncController(lpos, lcontroller.orientation, [0,1,1]);
-      }
-   }
+		let nextHeadsetPos = nextAvatar.headset.position;
+		let nextHeadsetRot = nextAvatar.headset.position;
+		let nextRcontroller = nextAvatar.rightController;
+		let nextLcontroller = nextAvatar.leftController;
+		let nextRelativeRight = CG.subtract(nextRcontroller.position, nextHeadsetPos);
+		let nextRelativeLeft = CG.subtract(nextLcontroller.position, nextHeadsetPos);
+
+		const rcontroller = avatar.rightController;
+		const lcontroller = avatar.leftController;
+
+		m.save();
+			m.translate(headsetPos[0], headsetPos[1], headsetPos[2]);
+			m.rotateQ(headsetRot);
+			m.save();
+				m.scale(0.1,0.1,0.1);
+				m.save();
+					drawShape(CG.cylinder, [0.2+cc,0.2+cc,0.4+cc]);
+				m.restore();
+			m.restore();
+			m.save();
+				drawSyncController(nextRelativeRight, rcontroller.orientation, CURRENT_COLOR);
+				drawSyncController(nextRelativeLeft, lcontroller.orientation, CURRENT_COLOR);
+			m.restore();
+		m.restore();
 	}
 
+	let drawSwappedAvatarAlt = (avatar, nextAvatar) => {
+		let headsetPos = avatar.headset.position;
+		let headsetRot = avatar.headset.orientation;
+		let headsetPosNext = nextAvatar.headset.position; // Also check if these are null, right?
+		let headsetRotNext = nextAvatar.headset.orientation;
+		let rcontroller = avatar.rightController;
+		let lcontroller = avatar.leftController;
+		if(headsetPos == null || headsetRot == null)
+			return;
+		if (typeof headsetPos == 'undefined') {
+			console.log(id);
+			console.log("not defined");
+		}
+
+		// get the y rotation angles
+		let yAngle = CG.yAngleFromQuaternion(headsetRot);
+		let yAngleNext = CG.yAngleFromQuaternion(headsetRotNext);
+		//TODO: apply yAngleNext - yAngle to controllers.
+
+		let yAngleVector = [-Math.sin(yAngle), 0, -Math.cos(yAngle)]; // turn the angle into vector in the x-z plane
+		yAngleVector = CG.normalize(yAngleVector);
+		let yAngleVectorNormal = [yAngleVector[2], 0, -yAngleVector[0]];
+		yAngleVectorNormal = CG.normalize(yAngleVectorNormal);
+
+		let yAngleNextVector = [-Math.sin(yAngleNext), 0, -Math.cos(yAngleNext)];
+		yAngleNextVector = CG.normalize(yAngleNextVector);
+		let yAngleNextVectorNormal = [yAngleNextVector[2], 0, -yAngleNextVector[0]];
+		yAngleNextVectorNormal = CG.normalize(yAngleNextVectorNormal);
+
+		let lControllerNext = nextAvatar.leftController;
+		let leftDispNext = CG.subtract(lControllerNext.position, headsetPosNext); // displacement of next's leftcontroller from its headset.
+		let xzLeftDispNext = [leftDispNext[0], 0, leftDispNext[2]];
+		let iLeft = CG.dot(xzLeftDispNext, yAngleNextVector); // scalar projection of xzLeftDispNext onto yAngleNextVector 
+		let jLeft = CG.dot(xzLeftDispNext, yAngleNextVectorNormal);
+		let xzLeftDisp = CG.add(CG.scale(yAngleVector, iLeft), CG.scale(yAngleVectorNormal, jLeft));
+		let leftDisp = [xzLeftDisp[0], leftDispNext[1], xzLeftDisp[2]]; // add y displacement back in 
+		let leftControllerPos = CG.add(headsetPos, leftDisp);
+
+		let rControllerNext = nextAvatar.rightController;
+		let rightDispNext = CG.subtract(rControllerNext.position, headsetPosNext); // displacement of next's rightcontroller from its headset.
+		let xzRightDispNext = [rightDispNext[0], 0, rightDispNext[2]];
+		let iRight = CG.dot(xzRightDispNext, yAngleNextVector); // scalar projection of xzRightDispNext onto yAngleNextVector 
+		let jRight = CG.dot(xzRightDispNext, yAngleNextVectorNormal);
+		let xzRightDisp = CG.add(CG.scale(yAngleVector, iRight), CG.scale(yAngleVectorNormal, jRight));
+		let rightDisp = [xzRightDisp[0], rightDispNext[1], xzRightDisp[2]]; // add y displacement back in
+		let rightControllerPos = CG.add(headsetPos, rightDisp);
+
+		drawSyncController(rightControllerPos, rcontroller.orientation, CURRENT_COLOR, yAngleNext - yAngle);
+		drawSyncController(leftControllerPos, lcontroller.orientation, CURRENT_COLOR, yAngleNext - yAngle);
+	};
 	// Avatars with arm swapping
 	let drawAvatars = () => {
 		let avatarIds = Object.keys( MR.avatars);
 		avatarIds.sort();
 
-		// if (input.LC) {
-		// 	let P = state.position;
-		// 	m.save();
-		// 		m.translate(-P[0],-P[1],-P[2]);
-		// 		m.rotateY(-state.turnAngle);
-		// 		m.rotateX(-state.tiltAngle);
-		// 		drawController(input.LC, 0, CURRENT_COLOR);
-		// 		drawController(input.RC, 1, CURRENT_COLOR);
-		// 	 m.restore();
-	 	// }
-		// render just yourself if you're alone
-		// if (avatarIds.length == 1) {
-		// 	return;
-		// }
+		let cc = 0;
 
-     let cc = 0;
+		for (let i=0; i<avatarIds.length; i++) {
+			let id = avatarIds[i];
+			let nextId = avatarIds[ (i+1) % avatarIds.length ];
+			let avatar = MR.avatars[id];
+			let nextAvatar = MR.avatars[nextId];
+			// console.log("ID " + id + " NEXTID " + nextId);
 
-     for (let i=0; i<avatarIds.length; i++) {
-        let id = avatarIds[i];
-        let nextId = avatarIds[ (i+1) % avatarIds.length ];
-        const avatar = MR.avatars[id];
-        const nextAvatar = MR.avatars[nextId];
-        // console.log("ID " + id + " NEXTID " + nextId);
-
-        if (avatar.mode == MR.UserType.vr && nextAvatar.mode == MR.UserType.vr) {
-           let headsetPos = avatar.headset.position;
-           let headsetRot = avatar.headset.orientation;
-           if(headsetPos == null || headsetRot == null)
-              continue;
-           if (typeof headsetPos == 'undefined') {
-              console.log(id);
-              console.log("not defined");
-           }
-
-           let nextHeadsetPos = nextAvatar.headset.position;
-           let nextHeadsetRot = nextAvatar.headset.position;
-           let nextRcontroller = nextAvatar.rightController;
-           let nextLcontroller = nextAvatar.leftController;
-           let nextRelativeRight = CG.subtract(nextRcontroller.position, nextHeadsetPos);
-           let nextRelativeLeft = CG.subtract(nextLcontroller.position, nextHeadsetPos);
-
-           const rcontroller = avatar.rightController;
-           const lcontroller = avatar.leftController;
-
-
-           m.save();
-             m.translate(headsetPos[0], headsetPos[1], headsetPos[2]);
-             m.rotateQ(headsetRot);
-             m.save();
-               m.scale(0.1,0.1,0.1);
-               m.save();
-                 drawShape(CG.cylinder, [0.2+cc,0.2+cc,0.4+cc]);
-               m.restore();
-             m.restore();
-             m.save();
-               drawSyncController(nextRelativeRight, rcontroller.orientation, CURRENT_COLOR);
-               drawSyncController(nextRelativeLeft, lcontroller.orientation, CURRENT_COLOR);
-             m.restore();
-           m.restore();
-        }
-        cc+=0.2;
-     }
-   }
+			if (avatar.mode == MR.UserType.vr && nextAvatar.mode == MR.UserType.vr) {
+				drawSwappedAvatarAlt(avatar, nextAvatar);
+				//drawSwappedAvatar(avatar, nextAvatar, cc);
+			}
+			cc+=0.2;
+		}
+	}
 
 	//drawSelfAvatar(CURRENT_COLOR);
-	drawSelfAvatar([1,1,1]); // drawing real self for debugging here.
+	//drawSelfAvatar([1,1,1]); // drawing real self for debugging here.
 
 
 	let drawBlob = (b) => {
-		  if(b.isAlive(state.frame)) {
-			 let p = b.getPos();
-			 m.save();
-			  m.translate(p[0], p[1], p[2]);
-			  m.scale(BLOB_SIZE, BLOB_SIZE, BLOB_SIZE);
-			  drawShape(CG.sphere, b.getColor());
-			 m.restore();
-		  }
+		if(b.isAlive(state.frame)) {
+			let p = b.getPos();
+			m.save();
+				m.translate(p[0], p[1], p[2]);
+				m.scale(BLOB_SIZE, BLOB_SIZE, BLOB_SIZE);
+				drawShape(CG.sphere, b.getColor());
+			m.restore();
+		}
 	}
 
 	let drawButton = (button) => {
@@ -991,20 +1026,20 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 
 	if (MODE == PLAY) {
 		for(let i=0; i<BLOB_COUNT; i++) {
-		  let b = blobs[i];
-		  if(b.isAlive(state.frame)) {
-			 let p = b.getPos();
-			 m.save();
-			  m.translate(p[0], p[1], p[2]);
-			  m.scale(BLOB_SIZE, BLOB_SIZE, BLOB_SIZE);
-			  drawShape(CG.sphere, b.getColor());
-			 m.restore();
-		  }
+			let b = blobs[i];
+			if(b.isAlive(state.frame)) {
+				let p = b.getPos();
+				m.save();
+					m.translate(p[0], p[1], p[2]);
+					m.scale(BLOB_SIZE, BLOB_SIZE, BLOB_SIZE);
+					drawShape(CG.sphere, b.getColor());
+				m.restore();
+			}
 		}
 	}
 
 	for (let n = 0 ; n < MR.objs.length ; n++) {
-      let obj = MR.objs[n];
+		let obj = MR.objs[n];
 		if (typeof obj.type == 'undefined') {
 			drawObject(obj);
 		} else {
@@ -1015,7 +1050,6 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 					}
 					break;
 				case BUTTON:
-					//:wconsole.log("drawing button");
 					if (MODE == START) {
 						drawButton(obj);
 					}
@@ -1023,9 +1057,10 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 				default:
 			}
 		}
-   }
+	}
 
-   drawAvatars(); // avatars with arm swapping
+	drawAvatars(); // avatars with arm swapping
+
 	m.translate(0, -EYE_HEIGHT, 0);
 	if (MODE == START) {
 		drawTable(0,0);
@@ -1033,23 +1068,11 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 	if (MODE == PLAY) {
 		drawTimer(timer);
 	}
-   // m.translate(0, HALL_WIDTH/2-EYE_HEIGHT, 0);
-   m.save();
-	  m.translate(0,HALL_WIDTH/2,0)// translate so you're standing on the floor
-      m.scale(-HALL_WIDTH/2, -HALL_WIDTH/2, -HALL_WIDTH/2);
-      drawShape(CG.cube, ROOM_COLOR);
-   m.restore();
-
-
-	//drawNormalAvatars(); // no arm swapping
-
-  //  m.save();
-  //   m.translate(0,0,-0.3);
-  //   m.scale(0.5,0.5,0.5);
-  //   drawAvatars();
-  // m.restore();
-
-
+	m.save();
+		m.translate(0,HALL_WIDTH/2,0)// translate so you're standing on the floor
+		m.scale(-HALL_WIDTH/2, -HALL_WIDTH/2, -HALL_WIDTH/2);
+		drawShape(CG.cube, ROOM_COLOR);
+	m.restore();
 }
 
 function onEndFrame(t, state) {
