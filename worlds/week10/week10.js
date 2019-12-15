@@ -688,23 +688,27 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 
 	const input  = state.input;
 
-	let drawShape = (shape, color, texture, textureScale) => {
-		gl.uniform4fv(state.uColorLoc, color.length == 4 ? color : color.concat([1]));
-		gl.uniformMatrix4fv(state.uModelLoc, false, m.value());
-		gl.uniform1i(state.uTexIndexLoc, texture === undefined ? -1 : texture);
-		gl.uniform1f(state.uTexScale, textureScale === undefined ? 1 : textureScale);
-		if (shape != prev_shape)
-			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array( shape ), gl.STATIC_DRAW);
-		if (state.isToon) {
-			gl.uniform1f (state.uToonLoc, .3 * CG.norm(m.value().slice(0,3)));
-			gl.cullFace(gl.FRONT);
-			gl.drawArrays(shape == CG.cube ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
-			gl.cullFace(gl.BACK);
-			gl.uniform1f (state.uToonLoc, 0);
-		}
-		gl.drawArrays(shape == CG.cube ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
-		prev_shape = shape;
-	}
+
+  let drawShape = (shape, color, texture, textureScale, flag) => {
+      gl.uniform4fv(state.uColorLoc, color.length == 4 ? color : color.concat([1]));
+      gl.uniformMatrix4fv(state.uModelLoc, false, m.value());
+      if (flag === undefined) flag = false;
+      if (shape == CG.cube) flag = true;
+      gl.uniform1i(state.uTexIndexLoc, texture === undefined ? -1 : texture);
+      gl.uniform1f(state.uTexScale, textureScale === undefined ? 1 : textureScale);
+      if (shape != prev_shape)
+         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shape), gl.STATIC_DRAW);
+      if (state.isToon) {
+         gl.uniform1f(state.uToonLoc, .3 * CG.norm(m.value().slice(0, 3)));
+         gl.cullFace(gl.FRONT);
+         gl.drawArrays(flag ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
+         gl.cullFace(gl.BACK);
+         gl.uniform1f(state.uToonLoc, 0);
+      }
+      gl.drawArrays(flag ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
+      prev_shape = shape;
+   }
+
 
 	let drawTimer = (timer) => {
 		m.save();
@@ -754,52 +758,84 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       let P = position;
 
       m.save();
-         m.multiply(state.avatarMatrixForward);
-         m.translate(P[0],P[1],P[2]);
-         m.rotateQ(orientation);
-         m.scale(.1);
-         m.save();
-            m.scale(1,1.5,1);
-            drawShape(CG.sphere, [0,0,0]);
-         m.restore();
-         for (let s = -1 ; s <= 1 ; s += 2) {
-            m.save();
-               m.translate(s*.4,.2,-.8);
-               m.scale(.4,.4,.1);
-               drawShape(CG.sphere, [10,10,10]);
-            m.restore();
-         }
+      m.multiply(state.avatarMatrixForward);
+      m.translate(P[0], P[1], P[2]);
+      m.rotateQ(orientation);
+      m.scale(.1);
+      drawShape(MOD.VR_simple, [1, 1, 1], VR_Base_Color, 1., true);
       m.restore();
    }
 
    let drawController = (C, hand, color) => {
       let P = C.position();
       m.save();
-         m.multiply(state.avatarMatrixForward);
-         m.translate(P[0],P[1],P[2]);
-         m.rotateQ(C.orientation());
-         m.translate(0,.02,-.005);
-         m.rotateX(.75);
-         m.save();
-            m.translate(0,0,-.0095).scale(.004,.004,.003);
-            drawShape(CG.sphere, C.isDown() ? [10,0,0] : color);
-         m.restore();
-         m.save();
-            m.translate(0,0,-.01).scale(.04,.04,.13);
-            drawShape(CG.torus1, color);
-         m.restore();
-         m.save();
-            m.translate(0,-.0135,-.008).scale(.04,.0235,.0015);
-            drawShape(CG.cylinder, color);
-         m.restore();
-         m.save();
-            m.translate(0,-.01,.03).scale(.012,.02,.037);
-            drawShape(CG.cylinder, color);
-         m.restore();
-         m.save();
-            m.translate(0,-.01,.067).scale(.012,.02,.023);
-            drawShape(CG.sphere, color);
-         m.restore();
+      m.multiply(state.avatarMatrixForward);
+      m.translate(P[0], P[1], P[2]);
+      m.rotateQ(C.orientation());
+      m.translate(0, .02, -.005);
+      m.rotateX(.75);
+      //myDrawShape();
+      //myDrawShape([1,.5,.3], gl.TRIANGLES, CG.l_arm_hold, 0);
+      m.save();
+      m.translate(0, 0, -.0095).scale(.004, .004, .003);
+      drawShape(CG.sphere, C.isDown() ? [10, 0, 0] : color);
+      m.restore();
+      //m.translate(10, 10, -10);
+      m.save();
+      //drawShape(MOD.VR_simple, [1, 1, 1], VR_Base_Color, 1., true);
+      //m.scale(2., 2., 2.);
+      if (hand == 1) {
+         //draw Right Hand
+
+
+         if (C.isDown()) {
+            m.rotateY(Math.PI);
+            m.rotateZ(-Math.PI / 2);
+            m.scale(.1, .1, .1);
+            m.translate(1.2, -4.5, -5);///5 * math.sin(state.time));
+         } else {
+            m.rotateY(Math.PI / 2);
+            m.rotateZ(Math.PI);
+            m.rotateX(Math.PI);
+            m.scale(.1, .1, .1);
+            m.translate(7, -11, 0);
+         }
+         drawShape(C.isDown() ? MOD.r_hand_hold : MOD.right_hand, [0, 1, 1], -1, 1., true);
+      } else {
+         //draw left hand
+         if (C.isDown()) {
+            m.rotateY(Math.PI);
+            m.rotateZ(Math.PI / 2);
+            m.scale(.1, .1, .1);
+            m.translate(-1.2, -4.5, -5);///5 * math.sin(state.time));
+         } else {
+            m.rotateY(Math.PI / 2);
+            //m.rotateZ(Math.PI);
+            //m.rotateX(Math.PI);
+            m.scale(.1, .1, .1);
+            m.translate(-7, -11, 0);///5 * math.sin(state.time));
+         }
+         drawShape(C.isDown() ? MOD.l_hand_hold : MOD.left_hand, [1, 1, 1], -1, 1., true);
+
+      }
+      m.restore();
+
+      m.save();
+      m.translate(0, 0, -.01).scale(.04, .04, .13);
+      drawShape(CG.torus1, [0, 0, 0]);
+      m.restore();
+      //m.save();
+      //m.translate(0, -.0135, -.008).scale(.04, .0235, .0015);
+      //drawShape(CG.cylinder, [0, 0, 0]);
+      //m.restore();
+      //m.save();
+      //m.translate(0, -.01, .03).scale(.012, .02, .037);
+      //drawShape(CG.cylinder, [0, 0, 0]);
+      //m.restore();
+      //m.save();
+      //m.translate(0, -.01, .067).scale(.012, .02, .023);
+      //drawShape(CG.sphere, [0, 0, 0]);
+      //m.restore();
       m.restore();
    }
 
