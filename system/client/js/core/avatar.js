@@ -6,10 +6,15 @@ class Avatar {
         this.headset = head;
         this.leftController = leftController;
         this.rightController = rightController;
+<<<<<<< HEAD
         // this.leftController.relativePosition = CG.subtract(this.leftController.position, this.headset.position);
         // this.rightController.relativePosition = CG.subtract(this.rightController.position, this.headset.position);
         //TODO: Do we really want this to be the default?
         this.mode = MR.UserType.browser;
+=======
+        //TODO: Do we really want this to be the default?
+        this.mode = MR.UserType.browser; 
+>>>>>>> models/import-models
     }
 }
 
@@ -25,14 +30,21 @@ class Controller {
   constructor(verts) {
     this.vertices = verts;
     this.position = [0,0,0];
+<<<<<<< HEAD
     // this.relativePosition = [0,0,0];
+=======
+>>>>>>> models/import-models
     this.orientation = [0,0,0,0];
     this.analog = new Button();
     this.trigger = new Button();
     this.side = new Button();
     this.x = new Button();
     this.y = new Button();
+<<<<<<< HEAD
   }
+=======
+  }  
+>>>>>>> models/import-models
 }
 
 class Button {

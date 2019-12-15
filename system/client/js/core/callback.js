@@ -1,5 +1,6 @@
 'use strict';
 
+<<<<<<< HEAD
 /**
  * Below part copied from week10.js, should have better way to share them
  */
@@ -141,6 +142,8 @@ function Blob() {
  * Above part copied from week10.js, should have better way to share them
  */
 
+=======
+>>>>>>> models/import-models
 MR.syncClient.eventBus.subscribe("platform", (json) => {
 
 });
@@ -330,6 +333,7 @@ MR.syncClient.eventBus.subscribe("spawn", (json) => {
 
 });
 
+<<<<<<< HEAD
 // Response to sendSpawnBlobMessage from client side
 MR.syncClient.eventBus.subscribe("spawnBlob", (json) => {
 
@@ -355,6 +359,8 @@ MR.syncClient.eventBus.subscribe("spawnBlob", (json) => {
 
 });
 
+=======
+>>>>>>> models/import-models
 MR.syncClient.eventBus.subscribe("object", (json) => {
     const success = json["success"];
      if (success) {
@@ -370,6 +376,7 @@ MR.syncClient.eventBus.subscribe("object", (json) => {
     }
 });
 
+<<<<<<< HEAD
 MR.syncClient.eventBus.subscribe("updateBlob", (json) => {
 
     const success = json["success"];
@@ -395,6 +402,8 @@ MR.syncClient.eventBus.subscribe("updateBlob", (json) => {
 
 });
 
+=======
+>>>>>>> models/import-models
 // on success
 // const response = {
 //   "type": "calibrate",

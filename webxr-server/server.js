@@ -322,6 +322,7 @@ try {
                     send(ws.index, -1, response);
                     console.log("object in use.");
                 }
+<<<<<<< HEAD
             } else if (json["type"] == "updateBlob") {
 
                 const key = json["uid"];
@@ -354,6 +355,9 @@ try {
                     send(ws.index, -1, response);
                     console.log("object in use.");
                 }
+=======
+
+>>>>>>> models/import-models
             } else if(json["type"] == "spawn") {
                 // This depends on the spawn logic we want to add.
                 const key = json["uid"];
@@ -382,6 +386,7 @@ try {
                     };
                     send(ws.index, -1, response);
                 }
+<<<<<<< HEAD
             } else if (json["type"] == "spawnBlob") {
                 const key = json["uid"];
                 const lockid = json["lockid"];
@@ -409,6 +414,9 @@ try {
                     };
                     send(ws.index, -1, response);
                 }
+=======
+
+>>>>>>> models/import-models
             } else if (json["type"] == "delete") {
 
                 const key = json["uid"];
