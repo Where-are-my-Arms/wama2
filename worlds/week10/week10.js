@@ -13,15 +13,15 @@ Note that I measured everything in inches, and then converted to units of meters
 const inchesToMeters = inches => inches * 0.0254;
 const metersToInches = meters => meters / 0.0254;
 
-const EYE_HEIGHT       = inchesToMeters( 69);
-const HALL_LENGTH      = inchesToMeters(306);
-const HALL_WIDTH       = inchesToMeters(215);
-const RING_RADIUS      = 0.0425;
-const TABLE_DEPTH      = inchesToMeters( 30);
-const TABLE_HEIGHT     = inchesToMeters( 29);
-const TABLE_WIDTH      = inchesToMeters( 60);
-const TABLE_THICKNESS  = inchesToMeters( 11/8);
-const LEG_THICKNESS    = inchesToMeters(  2.5);
+const EYE_HEIGHT = inchesToMeters(69);
+const HALL_LENGTH = inchesToMeters(306);
+const HALL_WIDTH = inchesToMeters(215);
+const RING_RADIUS = 0.0425;
+const TABLE_DEPTH = inchesToMeters(30);
+const TABLE_HEIGHT = inchesToMeters(29);
+const TABLE_WIDTH = inchesToMeters(60);
+const TABLE_THICKNESS = inchesToMeters(11 / 8);
+const LEG_THICKNESS = inchesToMeters(2.5);
 
 let enableModeler = true;
 
@@ -29,16 +29,16 @@ let enableModeler = true;
 let grabbableCube = new Obj(CG.torus);
 
 let lathe = CG.createMeshVertices(10, 16, CG.uvToLathe,
-             [ CG.bezierToCubic([-1.0,-1.0,-0.7,-0.3,-0.1 , 0.1, 0.3 , 0.7 , 1.0 ,1.0]),
-               CG.bezierToCubic([ 0.0, 0.5, 0.8, 1.1, 1.25, 1.4, 1.45, 1.55, 1.7 ,0.0]) ]);
+   [CG.bezierToCubic([-1.0, -1.0, -0.7, -0.3, -0.1, 0.1, 0.3, 0.7, 1.0, 1.0]),
+   CG.bezierToCubic([0.0, 0.5, 0.8, 1.1, 1.25, 1.4, 1.45, 1.55, 1.7, 0.0])]);
 // let lathe = CG.cube;
 ////////////////////////////// SCENE SPECIFIC CODE
 const WOOD = 0,
-      TILES = 1,
-      NOISY_BUMP = 2,
-      VR_Base_Color = 3,
-      Pikachu0 = 4,
-      Pikachu1 = 5;
+   TILES = 1,
+   NOISY_BUMP = 2,
+   VR_Base_Color = 3,
+   Pikachu0 = 4,
+   Pikachu1 = 5;
 
 let noise = new ImprovedNoise();
 let m = new Matrix();
@@ -63,33 +63,33 @@ to see what the options are.
 
 function HeadsetHandler(headset) {
    this.orientation = () => headset.pose.orientation;
-   this.position    = () => headset.pose.position;
+   this.position = () => headset.pose.position;
 }
 
 function ControllerHandler(controller) {
-   this.isDown      = () => controller.buttons[1].pressed;
-   this.onEndFrame  = () => wasDown = this.isDown();
+   this.isDown = () => controller.buttons[1].pressed;
+   this.onEndFrame = () => wasDown = this.isDown();
    this.orientation = () => controller.pose.orientation;
-   this.position    = () => controller.pose.position;
-   this.press       = () => ! wasDown && this.isDown();
-   this.release     = () => wasDown && ! this.isDown();
-   this.tip         = () => {
+   this.position = () => controller.pose.position;
+   this.press = () => !wasDown && this.isDown();
+   this.release = () => wasDown && !this.isDown();
+   this.tip = () => {
       let P = this.position();          // THIS CODE JUST MOVES
       m.identity();                     // THE "HOT SPOT" OF THE
-      m.translate(P[0],P[1],P[2]);      // CONTROLLER TOWARD ITS
+      m.translate(P[0], P[1], P[2]);      // CONTROLLER TOWARD ITS
       m.rotateQ(this.orientation());    // FAR TIP (FURTHER AWAY
-      m.translate(0,0,-.03);            // FROM THE USER'S HAND).
+      m.translate(0, 0, -.03);            // FROM THE USER'S HAND).
       let v = m.value();
-      return [v[12],v[13],v[14]];
+      return [v[12], v[13], v[14]];
    }
    this.center = () => {
       let P = this.position();
       m.identity();
-      m.translate(P[0],P[1],P[2]);
+      m.translate(P[0], P[1], P[2]);
       m.rotateQ(this.orientation());
-      m.translate(0,.02,-.005);
+      m.translate(0, .02, -.005);
       let v = m.value();
-      return [v[12],v[13],v[14]];
+      return [v[12], v[13], v[14]];
    }
    let wasDown = false;
 }
@@ -147,12 +147,12 @@ async function setup(state) {
    // for convenience
    // e.g. const input = state.input; 
    state.input = {
-      turnAngle : 0,
-      tiltAngle : 0,
-      cursor : ScreenCursor.trackCursor(MR.getCanvas()),
-      cursorPrev : [0,0,0],
-      LC : null,
-      RC : null
+      turnAngle: 0,
+      tiltAngle: 0,
+      cursor: ScreenCursor.trackCursor(MR.getCanvas()),
+      cursorPrev: [0, 0, 0],
+      LC: null,
+      RC: null
    }
 
    // I propose adding a dictionary mapping texture strings to locations, so that drawShapes becomes clearer
@@ -166,10 +166,10 @@ async function setup(state) {
    ]);
 
    let libSources = await MREditor.loadAndRegisterShaderLibrariesForLiveEditing(gl, "libs", [
-      { key : "pnoise"    , path : "shaders/noise.glsl"     , foldDefault : true },
-      { key : "sharedlib1", path : "shaders/sharedlib1.glsl", foldDefault : true },      
+      { key: "pnoise", path: "shaders/noise.glsl", foldDefault: true },
+      { key: "sharedlib1", path: "shaders/sharedlib1.glsl", foldDefault: true },
    ]);
-   if (! libSources)
+   if (!libSources)
       throw new Error("Could not load shader library");
 
    function onNeedsCompilationDefault(args, libMap, userData) {
@@ -179,12 +179,12 @@ async function setup(state) {
       if (implicitNoiseInclude) {
          let libCode = MREditor.libMap.get('pnoise');
          for (let i = 0; i < 2; i++) {
-               const stageCode = stages[i];
-               const hdrEndIdx = stageCode.indexOf(';');
-               const hdr = stageCode.substring(0, hdrEndIdx + 1);
-               output[i] = hdr + '\n#line 2 1\n' + 
-                           '#include<pnoise>\n#line ' + (hdr.split('\n').length + 1) + ' 0' + 
-                           stageCode.substring(hdrEndIdx + 1);
+            const stageCode = stages[i];
+            const hdrEndIdx = stageCode.indexOf(';');
+            const hdr = stageCode.substring(0, hdrEndIdx + 1);
+            output[i] = hdr + '\n#line 2 1\n' +
+               '#include<pnoise>\n#line ' + (hdr.split('\n').length + 1) + ' 0' +
+               stageCode.substring(hdrEndIdx + 1);
          }
       }
       MREditor.preprocessAndCreateShaderProgramFromStringsAndHandleErrors(
@@ -198,41 +198,41 @@ async function setup(state) {
    let shaderSource = await MREditor.loadAndRegisterShaderForLiveEditing(
       gl,
       "mainShader",
-      {   
+      {
          // (New Info): example of how the pre-compilation function callback
          // could be in the standard library instead if I put the function defintion
          // elsewhere
-         onNeedsCompilationDefault : onNeedsCompilationDefault,
-         onAfterCompilation : (program) => {
-               gl.useProgram(state.program = program);
-               state.uColorLoc    = gl.getUniformLocation(program, 'uColor');
-               state.uCursorLoc   = gl.getUniformLocation(program, 'uCursor');
-               state.uModelLoc    = gl.getUniformLocation(program, 'uModel');
-               state.uProjLoc     = gl.getUniformLocation(program, 'uProj');
-               state.uTexScale    = gl.getUniformLocation(program, 'uTexScale');
-               state.uTexIndexLoc = gl.getUniformLocation(program, 'uTexIndex');
-               state.uTimeLoc     = gl.getUniformLocation(program, 'uTime');
-               state.uToonLoc     = gl.getUniformLocation(program, 'uToon');
-               state.uViewLoc     = gl.getUniformLocation(program, 'uView');
-                     state.uTexLoc = [];
-                     for (let n = 0 ; n < 8 ; n++) {
-                        state.uTexLoc[n] = gl.getUniformLocation(program, 'uTex' + n);
-                        gl.uniform1i(state.uTexLoc[n], n);
-                     }
-         } 
+         onNeedsCompilationDefault: onNeedsCompilationDefault,
+         onAfterCompilation: (program) => {
+            gl.useProgram(state.program = program);
+            state.uColorLoc = gl.getUniformLocation(program, 'uColor');
+            state.uCursorLoc = gl.getUniformLocation(program, 'uCursor');
+            state.uModelLoc = gl.getUniformLocation(program, 'uModel');
+            state.uProjLoc = gl.getUniformLocation(program, 'uProj');
+            state.uTexScale = gl.getUniformLocation(program, 'uTexScale');
+            state.uTexIndexLoc = gl.getUniformLocation(program, 'uTexIndex');
+            state.uTimeLoc = gl.getUniformLocation(program, 'uTime');
+            state.uToonLoc = gl.getUniformLocation(program, 'uToon');
+            state.uViewLoc = gl.getUniformLocation(program, 'uView');
+            state.uTexLoc = [];
+            for (let n = 0; n < 8; n++) {
+               state.uTexLoc[n] = gl.getUniformLocation(program, 'uTex' + n);
+               gl.uniform1i(state.uTexLoc[n], n);
+            }
+         }
       },
       {
-         paths : {
-               vertex   : "shaders/vertex.vert.glsl",
-               fragment : "shaders/fragment.frag.glsl"
+         paths: {
+            vertex: "shaders/vertex.vert.glsl",
+            fragment: "shaders/fragment.frag.glsl"
          },
-         foldDefault : {
-               vertex   : true,
-               fragment : false
+         foldDefault: {
+            vertex: true,
+            fragment: false
          }
       }
    );
-   if (! shaderSource)
+   if (!shaderSource)
       throw new Error("Could not load shader");
 
    state.cursor = ScreenCursor.trackCursor(MR.getCanvas());
@@ -255,19 +255,19 @@ async function setup(state) {
    gl.enableVertexAttribArray(aTan);
    gl.vertexAttribPointer(aTan, 3, gl.FLOAT, false, bpe * VERTEX_SIZE, bpe * 6);
 
-   let aUV  = gl.getAttribLocation(state.program, 'aUV');
+   let aUV = gl.getAttribLocation(state.program, 'aUV');
    gl.enableVertexAttribArray(aUV);
-   gl.vertexAttribPointer(aUV , 2, gl.FLOAT, false, bpe * VERTEX_SIZE, bpe * 9);
+   gl.vertexAttribPointer(aUV, 2, gl.FLOAT, false, bpe * VERTEX_SIZE, bpe * 9);
 
 
-   for (let i = 0 ; i < images.length ; i++) {
-      gl.activeTexture (gl.TEXTURE0 + i);
-      gl.bindTexture   (gl.TEXTURE_2D, gl.createTexture());
-      gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-      gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-      gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-      gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texImage2D    (gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, images[i]);
+   for (let i = 0; i < images.length; i++) {
+      gl.activeTexture(gl.TEXTURE0 + i);
+      gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, images[i]);
       gl.generateMipmap(gl.TEXTURE_2D);
    }
 
@@ -287,11 +287,11 @@ async function setup(state) {
 
    // load files into a spatial audio context for playback later - the path will be needed to reference this source later
    this.audioContext1 = new SpatialAudioContext([
-   'assets/audio/blop.wav'
+      'assets/audio/blop.wav'
    ]);
 
    this.audioContext2 = new SpatialAudioContext([
-   'assets/audio/peacock.wav'
+      'assets/audio/peacock.wav'
    ]);
 
 
@@ -305,8 +305,8 @@ async function setup(state) {
    ************************************************************************/
 
    MR.objs.push(grabbableCube);
-   grabbableCube.position    = [0,0,-0.5].slice();
-   grabbableCube.orientation = [1,0,0,1].slice();
+   grabbableCube.position = [0, 0, -0.5].slice();
+   grabbableCube.orientation = [1, 0, 0, 1].slice();
    grabbableCube.uid = 0;
    grabbableCube.lock = new Lock();
    sendSpawnMessage(grabbableCube);
@@ -318,17 +318,17 @@ This is an example of a spawn message we send to the server.
 
 ************************************************************************/
 
-function sendSpawnMessage(object){
-   const response = 
-      {
-         type: "spawn",
-         uid: object.uid,
-         lockid: -1,
-         state: {
-            position: object.position,
-            orientation: object.orientation,
-         }
-      };
+function sendSpawnMessage(object) {
+   const response =
+   {
+      type: "spawn",
+      uid: object.uid,
+      lockid: -1,
+      state: {
+         position: object.position,
+         orientation: object.orientation,
+      }
+   };
 
    MR.syncClient.send(response);
 }
@@ -348,54 +348,54 @@ function onStartFrame(t, state) {
 
    -----------------------------------------------------------------*/
 
-   const input  = state.input;
+   const input = state.input;
    const editor = state.editor;
 
-   if (! state.avatarMatrixForward) {
+   if (!state.avatarMatrixForward) {
       // MR.avatarMatrixForward is because i need accesss to this in callback.js, temp hack
       MR.avatarMatrixForward = state.avatarMatrixForward = CG.matrixIdentity();
       MR.avatarMatrixInverse = state.avatarMatrixInverse = CG.matrixIdentity();
-   } 
+   }
 
    if (MR.VRIsActive()) {
       if (!input.HS) input.HS = new HeadsetHandler(MR.headset);
       if (!input.LC) input.LC = new ControllerHandler(MR.leftController);
       if (!input.RC) input.RC = new ControllerHandler(MR.rightController);
 
-      if (! state.calibrate) {
+      if (!state.calibrate) {
          m.identity();
-         m.rotateY(Math.PI/2);
-         m.translate(-2.01,.04,0);
+         m.rotateY(Math.PI / 2);
+         m.translate(-2.01, .04, 0);
          state.calibrate = m.value().slice();
       }
    }
 
-   if (! state.tStart)
+   if (!state.tStart)
       state.tStart = t;
    state.time = (t - state.tStart) / 1000;
 
-    // THIS CURSOR CODE IS ONLY RELEVANT WHEN USING THE BROWSER MOUSE, NOT WHEN IN VR MODE.
+   // THIS CURSOR CODE IS ONLY RELEVANT WHEN USING THE BROWSER MOUSE, NOT WHEN IN VR MODE.
 
    let cursorValue = () => {
       let p = state.cursor.position(), canvas = MR.getCanvas();
-      return [ p[0] / canvas.clientWidth * 2 - 1, 1 - p[1] / canvas.clientHeight * 2, p[2] ];
+      return [p[0] / canvas.clientWidth * 2 - 1, 1 - p[1] / canvas.clientHeight * 2, p[2]];
    }
 
    let cursorXYZ = cursorValue();
    if (state.cursorPrev === undefined)
-      state.cursorPrev = [0,0,0];
+      state.cursorPrev = [0, 0, 0];
    if (state.turnAngle === undefined)
       state.turnAngle = state.tiltAngle = 0;
    if (cursorXYZ[2] && state.cursorPrev[2]) {
-      state.turnAngle -= Math.PI/2 * (cursorXYZ[0] - state.cursorPrev[0]);
-      state.tiltAngle += Math.PI/2 * (cursorXYZ[1] - state.cursorPrev[1]);
+      state.turnAngle -= Math.PI / 2 * (cursorXYZ[0] - state.cursorPrev[0]);
+      state.tiltAngle += Math.PI / 2 * (cursorXYZ[1] - state.cursorPrev[1]);
    }
    state.cursorPrev = cursorXYZ;
 
    if (state.position === undefined)
-      state.position = [0,0,0];
+      state.position = [0, 0, 0];
    let fx = -.01 * Math.sin(state.turnAngle),
-       fz =  .01 * Math.cos(state.turnAngle);
+      fz = .01 * Math.cos(state.turnAngle);
    if (Input.keyIsDown(Input.KEY_UP)) {
       state.position[0] += fx;
       state.position[2] += fz;
@@ -405,13 +405,13 @@ function onStartFrame(t, state) {
       state.position[2] -= fz;
    }
 
-// SET UNIFORMS AND GRAPHICAL STATE BEFORE DRAWING.
+   // SET UNIFORMS AND GRAPHICAL STATE BEFORE DRAWING.
 
    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
    gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
    gl.uniform3fv(state.uCursorLoc, cursorXYZ);
-   gl.uniform1f (state.uTimeLoc  , state.time);
+   gl.uniform1f(state.uTimeLoc, state.time);
 
    gl.enable(gl.DEPTH_TEST);
    gl.enable(gl.CULL_FACE);
@@ -431,16 +431,16 @@ function onStartFrame(t, state) {
          menuChoice = findInMenu(input.RC.position(), input.LC.tip());
          if (menuChoice >= 0 && input.LC.press()) {
             state.isNewObj = true;
-               let newObject = new Obj(menuShape[menuChoice]);
-               /*Should you want to support grabbing, refer to the
-               above example in setup()*/ 
+            let newObject = new Obj(menuShape[menuChoice]);
+            /*Should you want to support grabbing, refer to the
+            above example in setup()*/
             MR.objs.push(newObject);
-               sendSpawnMessage(newObject);
+            sendSpawnMessage(newObject);
          }
       }
       if (state.isNewObj) {
          let obj = MR.objs[MR.objs.length - 1];
-         obj.position    = input.LC.tip().slice();
+         obj.position = input.LC.tip().slice();
          obj.orientation = input.LC.orientation().slice();
          //Create lock object for each new obj.
          obj.lock = new Lock();
@@ -452,14 +452,14 @@ function onStartFrame(t, state) {
    if (input.LC) {
       let LP = input.LC.center();
       let RP = input.RC.center();
-      let D  = CG.subtract(LP, RP);
-      let d  = metersToInches(CG.norm(D));
+      let D = CG.subtract(LP, RP);
+      let d = metersToInches(CG.norm(D));
       let getX = C => {
          m.save();
-            m.identity();
-            m.rotateQ(CG.matrixFromQuaternion(C.orientation()));
-            m.rotateX(.75);
-            let x = (m.value())[1];
+         m.identity();
+         m.rotateQ(CG.matrixFromQuaternion(C.orientation()));
+         m.rotateX(.75);
+         let x = (m.value())[1];
          m.restore();
          return x;
       }
@@ -471,40 +471,40 @@ function onStartFrame(t, state) {
             state.calibrationCount = 0;
          if (++state.calibrationCount == 30) {
             m.save();
-               m.identity();
-               m.translate(CG.mix(LP, RP, .5));
-               m.rotateY(Math.atan2(D[0], D[2]) + Math.PI/2);
-               m.translate(-2.35,1.00,-.72);
-               state.avatarMatrixForward = CG.matrixInverse(m.value());
-               state.avatarMatrixInverse = m.value();
+            m.identity();
+            m.translate(CG.mix(LP, RP, .5));
+            m.rotateY(Math.atan2(D[0], D[2]) + Math.PI / 2);
+            m.translate(-2.35, 1.00, -.72);
+            state.avatarMatrixForward = CG.matrixInverse(m.value());
+            state.avatarMatrixInverse = m.value();
             m.restore();
             state.calibrationCount = 0;
          }
       }
    }
 
-    /*-----------------------------------------------------------------
+   /*-----------------------------------------------------------------
 
-    This function releases stale locks. Stale locks are locks that
-    a user has already lost ownership over by letting go
+   This function releases stale locks. Stale locks are locks that
+   a user has already lost ownership over by letting go
 
-    -----------------------------------------------------------------*/
+   -----------------------------------------------------------------*/
 
-    releaseLocks(state);
+   releaseLocks(state);
 
-    /*-----------------------------------------------------------------
+   /*-----------------------------------------------------------------
 
-    This function checks for intersection and if user has ownership over 
-    object then sends a data stream of position and orientation.
+   This function checks for intersection and if user has ownership over 
+   object then sends a data stream of position and orientation.
 
-    -----------------------------------------------------------------*/
+   -----------------------------------------------------------------*/
 
-    pollGrab(state);
+   pollGrab(state);
 }
 
-let menuX = [-.2,-.1,-.2,-.1];
-let menuY = [ .1, .1,  0,  0];
-let menuShape = [ CG.cube, CG.sphere, CG.cylinder, CG.torus ];
+let menuX = [-.2, -.1, -.2, -.1];
+let menuY = [.1, .1, 0, 0];
+let menuShape = [CG.cube, CG.sphere, CG.cylinder, CG.torus];
 let menuChoice = -1;
 
 /*-----------------------------------------------------------------
@@ -522,7 +522,7 @@ let findInMenu = (mp, p) => {
    let x = p[0] - mp[0];
    let y = p[1] - mp[1];
    let z = p[2] - mp[2];
-   for (let n = 0 ; n < 4 ; n++) {
+   for (let n = 0; n < 4; n++) {
       let dx = x - menuX[n];
       let dy = y - menuY[n];
       let dz = z;
@@ -542,17 +542,17 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
    m.rotateX(state.tiltAngle);
    m.rotateY(state.turnAngle);
    let P = state.position;
-   m.translate(P[0],P[1],P[2]);
+   m.translate(P[0], P[1], P[2]);
 
    m.save();
-      myDraw(t, projMat, viewMat, state, eyeIdx, false);
+   myDraw(t, projMat, viewMat, state, eyeIdx, false);
    m.restore();
 
    m.save();
-      m.translate(HALL_WIDTH/2 - TABLE_DEPTH/2, -TABLE_HEIGHT*1.048, TABLE_WIDTH/6.7);
-      m.rotateY(Math.PI);
-      m.scale(.1392);
-      myDraw(t, projMat, viewMat, state, eyeIdx, true);
+   m.translate(HALL_WIDTH / 2 - TABLE_DEPTH / 2, -TABLE_HEIGHT * 1.048, TABLE_WIDTH / 6.7);
+   m.rotateY(Math.PI);
+   m.scale(.1392);
+   myDraw(t, projMat, viewMat, state, eyeIdx, true);
    m.restore();
 }
 
@@ -563,47 +563,47 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
 
    let prev_shape = null;
 
-   const input  = state.input;
+   const input = state.input;
 
-    /*-----------------------------------------------------------------
+   /*-----------------------------------------------------------------
 
-    The drawShape() function below is optimized in that it only downloads
-    new vertices to the GPU if the vertices (the "shape" argument) have
-    changed since the previous call.
+   The drawShape() function below is optimized in that it only downloads
+   new vertices to the GPU if the vertices (the "shape" argument) have
+   changed since the previous call.
 
-    Also, currently we only draw gl.TRIANGLES if this is a cube. In all
-    other cases, we draw gl.TRIANGLE_STRIP. You might want to change
-    this if you create other kinds of shapes that are not triangle strips.
+   Also, currently we only draw gl.TRIANGLES if this is a cube. In all
+   other cases, we draw gl.TRIANGLE_STRIP. You might want to change
+   this if you create other kinds of shapes that are not triangle strips.
 
-    -----------------------------------------------------------------*/
-    let myDrawShape = (color, type, vertices, texture, textureScale) => {
-        //gl.uniform3fv(state.uColorLoc, color);
-        gl.uniform4fv(state.uColorLoc, color.length == 4 ? color : color.concat([1]));
-        gl.uniformMatrix4fv(state.uModelLoc, false, m.value());
-        gl.uniform1i(state.uTexIndexLoc, texture === undefined ? -1 : texture);
-        gl.uniform1f(state.uTexScale, textureScale === undefined ? 1 : textureScale);
-        if (vertices != prev_shape)
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-        gl.drawArrays(type, 0, vertices.length / VERTEX_SIZE);
-        prev_shape = vertices;
-    }
+   -----------------------------------------------------------------*/
+   let myDrawShape = (color, type, vertices, texture, textureScale) => {
+      //gl.uniform3fv(state.uColorLoc, color);
+      gl.uniform4fv(state.uColorLoc, color.length == 4 ? color : color.concat([1]));
+      gl.uniformMatrix4fv(state.uModelLoc, false, m.value());
+      gl.uniform1i(state.uTexIndexLoc, texture === undefined ? -1 : texture);
+      gl.uniform1f(state.uTexScale, textureScale === undefined ? 1 : textureScale);
+      if (vertices != prev_shape)
+         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+      gl.drawArrays(type, 0, vertices.length / VERTEX_SIZE);
+      prev_shape = vertices;
+   }
 
 
    let drawShape = (shape, color, texture, textureScale, flag) => {
       gl.uniform4fv(state.uColorLoc, color.length == 4 ? color : color.concat([1]));
       gl.uniformMatrix4fv(state.uModelLoc, false, m.value());
-      if(flag === undefined) flag = false;
-      if(shape == CG.cube) flag = true;
+      if (flag === undefined) flag = false;
+      if (shape == CG.cube) flag = true;
       gl.uniform1i(state.uTexIndexLoc, texture === undefined ? -1 : texture);
       gl.uniform1f(state.uTexScale, textureScale === undefined ? 1 : textureScale);
       if (shape != prev_shape)
-         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array( shape ), gl.STATIC_DRAW);
+         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shape), gl.STATIC_DRAW);
       if (state.isToon) {
-         gl.uniform1f (state.uToonLoc, .3 * CG.norm(m.value().slice(0,3)));
+         gl.uniform1f(state.uToonLoc, .3 * CG.norm(m.value().slice(0, 3)));
          gl.cullFace(gl.FRONT);
-         gl.drawArrays(flag? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
+         gl.drawArrays(flag ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
          gl.cullFace(gl.BACK);
-         gl.uniform1f (state.uToonLoc, 0);
+         gl.uniform1f(state.uToonLoc, 0);
       }
       gl.drawArrays(flag ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
       prev_shape = shape;
@@ -612,123 +612,162 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
    let drawAvatar = (avatar, pos, rot, scale, state) => {
       m.save();
       //   m.identity();
-         m.translate(pos[0],pos[1],pos[2]);
-         m.rotateQ(rot);
-         m.scale(scale,scale,scale);
-         drawShape(MOD.VR_simple, [1,1,1],VR_Base_Color,1.,true);
-         //myDrawShape([1,1,1], gl.TRIANGLES, MOD.VR_simple, VR_Base_Color);
-        // drawShape(avatar.headset.vertices, [1,1,1], 0);
+      m.translate(pos[0], pos[1], pos[2]);
+      m.rotateQ(rot);
+      m.scale(scale, scale, scale);
+      drawShape(MOD.VR_simple, [1, 1, 1], VR_Base_Color, 1., true);
+      //myDrawShape([1,1,1], gl.TRIANGLES, MOD.VR_simple, VR_Base_Color);
+      // drawShape(avatar.headset.vertices, [1,1,1], 0);
       m.restore();
    }
 
-    /*-----------------------------------------------------------------
+   /*-----------------------------------------------------------------
 
-    In my little toy geometric modeler, the pop-up menu of objects only
-    appears while the right controller trigger is pressed. This is just
-    an example. Feel free to change things, depending on what you are
-    trying to do in your homework.
+   In my little toy geometric modeler, the pop-up menu of objects only
+   appears while the right controller trigger is pressed. This is just
+   an example. Feel free to change things, depending on what you are
+   trying to do in your homework.
 
-    -----------------------------------------------------------------*/
+   -----------------------------------------------------------------*/
 
    let showMenu = p => {
       let x = p[0], y = p[1], z = p[2];
-      for (let n = 0 ; n < 4 ; n++) {
+      for (let n = 0; n < 4; n++) {
          m.save();
-            m.multiply(state.avatarMatrixForward);
-            m.translate(x + menuX[n], y + menuY[n], z);
-            m.scale(.03, .03, .03);
-            drawShape(menuShape[n], n == menuChoice ? [1,.5,.5] : [1,1,1]);
+         m.multiply(state.avatarMatrixForward);
+         m.translate(x + menuX[n], y + menuY[n], z);
+         m.scale(.03, .03, .03);
+         drawShape(menuShape[n], n == menuChoice ? [1, .5, .5] : [1, 1, 1]);
          m.restore();
       }
    }
 
-    /*-----------------------------------------------------------------
+   /*-----------------------------------------------------------------
 
-    drawTable() just happens to model the physical size and shape of the
-    tables in my lab (measured in meters). If you want to model physical
-    furniture, you will probably want to do something different.
+   drawTable() just happens to model the physical size and shape of the
+   tables in my lab (measured in meters). If you want to model physical
+   furniture, you will probably want to do something different.
 
-    -----------------------------------------------------------------*/
+   -----------------------------------------------------------------*/
 
    let drawTable = id => {
       m.save();
-         m.translate(0, TABLE_HEIGHT - TABLE_THICKNESS/2, 0);
-         m.scale(TABLE_DEPTH/2, TABLE_THICKNESS/2, TABLE_WIDTH/2);
-         drawShape(CG.cube, [1,1,1], 0);
+      m.translate(0, TABLE_HEIGHT - TABLE_THICKNESS / 2, 0);
+      m.scale(TABLE_DEPTH / 2, TABLE_THICKNESS / 2, TABLE_WIDTH / 2);
+      drawShape(CG.cube, [1, 1, 1], 0);
       m.restore();
       m.save();
-         let h  = (TABLE_HEIGHT - TABLE_THICKNESS) / 2;
-         let dx = (TABLE_DEPTH  - LEG_THICKNESS  ) / 2;
-         let dz = (TABLE_WIDTH  - LEG_THICKNESS  ) / 2;
-         for (let x = -dx ; x <= dx ; x += 2 * dx)
-         for (let z = -dz ; z <= dz ; z += 2 * dz) {
+      let h = (TABLE_HEIGHT - TABLE_THICKNESS) / 2;
+      let dx = (TABLE_DEPTH - LEG_THICKNESS) / 2;
+      let dz = (TABLE_WIDTH - LEG_THICKNESS) / 2;
+      for (let x = -dx; x <= dx; x += 2 * dx)
+         for (let z = -dz; z <= dz; z += 2 * dz) {
             m.save();
-               m.translate(x, h, z);
-               m.scale(LEG_THICKNESS/2, h, LEG_THICKNESS/2);
-               drawShape(CG.cube, [.5,.5,.5]);
+            m.translate(x, h, z);
+            m.scale(LEG_THICKNESS / 2, h, LEG_THICKNESS / 2);
+            drawShape(CG.cube, [.5, .5, .5]);
             m.restore();
          }
       m.restore();
    }
 
-    /*-----------------------------------------------------------------
+   /*-----------------------------------------------------------------
 
-    The below is just my particular "programmer art" for the size and
-    shape of a controller. Feel free to create a different appearance
-    for the controller. You might also want the controller appearance,
-    as well as the way it animates when you press the trigger or other
-    buttons, to change with different functionality.
+   The below is just my particular "programmer art" for the size and
+   shape of a controller. Feel free to create a different appearance
+   for the controller. You might also want the controller appearance,
+   as well as the way it animates when you press the trigger or other
+   buttons, to change with different functionality.
 
-    For example, you might want to have one appearance when using it as
-    a selection tool, a resizing tool, a tool for drawing in the air,
-    and so forth.
+   For example, you might want to have one appearance when using it as
+   a selection tool, a resizing tool, a tool for drawing in the air,
+   and so forth.
 
-    -----------------------------------------------------------------*/
-    
+   -----------------------------------------------------------------*/
+
    let drawHeadset = (position, orientation) => {
       //  let P = HS.position();'
       let P = position;
 
       m.save();
-         m.multiply(state.avatarMatrixForward);
-         m.translate(P[0],P[1],P[2]);
-         m.rotateQ(orientation);
-         m.scale(.1);
-         drawShape(MOD.VR_simple, [1,1,1],VR_Base_Color,1.,true);
+      m.multiply(state.avatarMatrixForward);
+      m.translate(P[0], P[1], P[2]);
+      m.rotateQ(orientation);
+      m.scale(.1);
+      drawShape(MOD.VR_simple, [1, 1, 1], VR_Base_Color, 1., true);
       m.restore();
    }
 
    let drawController = (C, hand) => {
       let P = C.position();
       m.save();
-         m.multiply(state.avatarMatrixForward);
-         m.translate(P[0],P[1],P[2]);
-         m.rotateQ(C.orientation());
-         m.translate(0,.02,-.005);
-         m.rotateX(.75);
-         //myDrawShape();
-         //myDrawShape([1,.5,.3], gl.TRIANGLES, CG.l_arm_hold, 0);
-         drawShape(MOD.left_hand, [1,1,1],-1,1.,true);
-         m.save();
-            m.translate(0,0,-.0095).scale(.004,.004,.003);
-            drawShape(CG.sphere, C.isDown() ? [10,0,0] : [.5,0,0]);
-         m.restore();
-         m.save();
-            m.translate(0,0,-.01).scale(.04,.04,.13);
-            drawShape(CG.torus1, [0,0,0]);
-         m.restore();
-         m.save();
-            m.translate(0,-.0135,-.008).scale(.04,.0235,.0015);
-            drawShape(CG.cylinder, [0,0,0]);
-         m.restore();
-         m.save();
-            m.translate(0,-.01,.03).scale(.012,.02,.037);
-            drawShape(CG.cylinder, [0,0,0]);
-         m.restore();
-         m.save();
-            m.translate(0,-.01,.067).scale(.012,.02,.023);
-            drawShape(CG.sphere, [0,0,0]);
-         m.restore();
+      m.multiply(state.avatarMatrixForward);
+      m.translate(P[0], P[1], P[2]);
+      m.rotateQ(C.orientation());
+      m.translate(0, .02, -.005);
+      m.rotateX(.75);
+      //myDrawShape();
+      //myDrawShape([1,.5,.3], gl.TRIANGLES, CG.l_arm_hold, 0);
+      m.save();
+      m.translate(0, 0, -.0095).scale(.004, .004, .003);
+      drawShape(CG.sphere, C.isDown() ? [10, 0, 0] : [.5, 0, 0]);
+      m.restore();
+      //m.translate(10, 10, -10);
+      m.save();
+      //drawShape(MOD.VR_simple, [1, 1, 1], VR_Base_Color, 1., true);
+      //m.scale(2., 2., 2.);
+      if (hand == 1) {
+         //draw Right Hand
+
+
+         if (C.isDown()) {
+            m.rotateY(Math.PI);
+            m.rotateZ(-Math.PI / 2);
+            m.scale(.1, .1, .1);
+            m.translate(1.2, -4.5, -5);///5 * math.sin(state.time));
+         } else {
+            m.rotateY(Math.PI / 2);
+            m.rotateZ(Math.PI);
+            m.rotateX(Math.PI);
+            m.scale(.1, .1, .1);
+            m.translate(7, -11, 0);
+         }
+         drawShape(C.isDown() ? MOD.r_hand_hold : MOD.right_hand, [0, 1, 1], -1, 1., true);
+      } else {
+         //draw left hand
+         if (C.isDown()) {
+            m.rotateY(Math.PI);
+            m.rotateZ(Math.PI / 2);
+            m.scale(.1, .1, .1);
+            m.translate(-1.2, -4.5, -5);///5 * math.sin(state.time));
+         } else {
+            m.rotateY(Math.PI / 2);
+            //m.rotateZ(Math.PI);
+            //m.rotateX(Math.PI);
+            m.scale(.1, .1, .1);
+            m.translate(-7, -11, 0);///5 * math.sin(state.time));
+         }
+         drawShape(C.isDown() ? MOD.l_hand_hold : MOD.left_hand, [1, 1, 1], -1, 1., true);
+
+      }
+      m.restore();
+
+      m.save();
+      m.translate(0, 0, -.01).scale(.04, .04, .13);
+      drawShape(CG.torus1, [0, 0, 0]);
+      m.restore();
+      //m.save();
+      //m.translate(0, -.0135, -.008).scale(.04, .0235, .0015);
+      //drawShape(CG.cylinder, [0, 0, 0]);
+      //m.restore();
+      //m.save();
+      //m.translate(0, -.01, .03).scale(.012, .02, .037);
+      //drawShape(CG.cylinder, [0, 0, 0]);
+      //m.restore();
+      //m.save();
+      //m.translate(0, -.01, .067).scale(.012, .02, .023);
+      //drawShape(CG.sphere, [0, 0, 0]);
+      //m.restore();
       m.restore();
    }
 
@@ -736,29 +775,30 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
       let P = pos;
       m.save();
       // m.identity();
-         m.translate(P[0], P[1], P[2]);
-         m.rotateQ(rot);
-         m.translate(0,.02,-.005);
-         m.rotateX(.75);
-         m.save();
-               m.translate(0,0,-.0095).scale(.004,.004,.003);
-         m.restore();
-         m.save();
-               m.translate(0,0,-.01).scale(.04,.04,.13);
-               drawShape(CG.torus1, [0,0,0]);
-         m.restore();
-         m.save();
-               m.translate(0,-.0135,-.008).scale(.04,.0235,.0015);
-               drawShape(CG.cylinder, [0,0,0]);
-         m.restore();
-         m.save();
-               m.translate(0,-.01,.03).scale(.012,.02,.037);
-               drawShape(CG.cylinder, [0,0,0]);
-         m.restore();
-         m.save();
-               m.translate(0,-.01,.067).scale(.012,.02,.023);
-               drawShape(CG.sphere, [0,0,0]);
-         m.restore();
+      m.translate(P[0], P[1], P[2]);
+      m.rotateQ(rot);
+      m.translate(0, .02, -.005);
+      m.rotateX(.75);
+      drawShape(MOD.left_hand, color, -1, 1., true);
+      //m.save();
+      //m.translate(0, 0, -.0095).scale(.004, .004, .003);
+      //m.restore();
+      //m.save();
+      //m.translate(0, 0, -.01).scale(.04, .04, .13);
+      //drawShape(CG.torus1, [0, 0, 0]);
+      //m.restore();
+      //m.save();
+      //m.translate(0, -.0135, -.008).scale(.04, .0235, .0015);
+      //drawShape(CG.cylinder, [0, 0, 0]);
+      //m.restore();
+      //m.save();
+      //m.translate(0, -.01, .03).scale(.012, .02, .037);
+      //drawShape(CG.cylinder, [0, 0, 0]);
+      //m.restore();
+      //m.save();
+      //m.translate(0, -.01, .067).scale(.012, .02, .023);
+      //drawShape(CG.sphere, [0, 0, 0]);
+      //m.restore();
       m.restore();
    }
 
@@ -768,7 +808,7 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
       m.save();
 
       let P = state.position;
-      m.translate(-P[0],-P[1],-P[2]);
+      m.translate(-P[0], -P[1], -P[2]);
       m.rotateY(-state.turnAngle);
       m.rotateX(-state.tiltAngle);
 
@@ -780,148 +820,149 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
    }
 
 
-    /*-----------------------------------------------------------------
+   /*-----------------------------------------------------------------
 
-    This is where I draw the objects that have been created.
+   This is where I draw the objects that have been created.
 
-    If I were to make these objects interactive (that is, responsive
-    to the user doing things with the controllers), that logic would
-    need to go into onStartFrame(), not here.
+   If I were to make these objects interactive (that is, responsive
+   to the user doing things with the controllers), that logic would
+   need to go into onStartFrame(), not here.
 
-    -----------------------------------------------------------------*/
+   -----------------------------------------------------------------*/
 
-   for (let n = 0 ; n < MR.objs.length ; n++) {
+   for (let n = 0; n < MR.objs.length; n++) {
       let obj = MR.objs[n], P = obj.position;
       m.save();
-         m.multiply(state.avatarMatrixForward);
-         m.translate(P[0], P[1], P[2]);
-         m.rotateQ(obj.orientation);
-         m.scale(.03,.03,.03);
-         drawShape(obj.shape, [1,1,1]);
-         
+      m.multiply(state.avatarMatrixForward);
+      m.translate(P[0], P[1], P[2]);
+      m.rotateQ(obj.orientation);
+      m.scale(.03, .03, .03);
+      drawShape(obj.shape, [1, 1, 1]);
+
       m.restore();
    }
 
    m.translate(0, -EYE_HEIGHT, 0);
- 
-    /*-----------------------------------------------------------------
 
-    Notice that I make the room itself as an inside-out cube, by
-    scaling x,y and z by negative amounts. This negative scaling
-    is a useful general trick for creating interiors.
+   /*-----------------------------------------------------------------
 
-    -----------------------------------------------------------------*/
+   Notice that I make the room itself as an inside-out cube, by
+   scaling x,y and z by negative amounts. This negative scaling
+   is a useful general trick for creating interiors.
+
+   -----------------------------------------------------------------*/
 
    m.save();
-      let dy = isMiniature ? 0 : HALL_WIDTH/2;
-      m.translate(0, dy, 0);
-      m.scale(-HALL_WIDTH/2, -dy, -HALL_LENGTH/2);
-      drawShape(CG.cube, [1,1,1], 1,4, 2,4);
+   let dy = isMiniature ? 0 : HALL_WIDTH / 2;
+   m.translate(0, dy, 0);
+   m.scale(-HALL_WIDTH / 2, -dy, -HALL_LENGTH / 2);
+   drawShape(CG.cube, [1, 1, 1], 1, 4, 2, 4);
    m.restore();
 
    m.save();
-      m.translate((HALL_WIDTH - TABLE_DEPTH) / 2, 0, 0);
-      drawTable(0);
+   m.translate((HALL_WIDTH - TABLE_DEPTH) / 2, 0, 0);
+   drawTable(0);
    m.restore();
 
    m.save();
-      m.translate((TABLE_DEPTH - HALL_WIDTH) / 2, 0, 0);
-      drawTable(1);
+   m.translate((TABLE_DEPTH - HALL_WIDTH) / 2, 0, 0);
+   drawTable(1);
    m.restore();
 
    // DRAW TEST SHAPE
    m.save();
-    //m.translate(0,-2,-5);
-    m.translate(0,1,-3);
-    m.scale(.1,.1,.1);
-    m.rotateY(state.time);
-    //drawShape(MOD.VR_simple, [1,1,1], VR_Base_Color,[1,1,1],true);
-    //myDrawShape([1, 1, 1], gl.TRIANGLES, pikachuVertices2, 2);
-    drawShape(MOD.VR_simple, [1,1,1],VR_Base_Color,1.,true);
-    //drawShape(MOD.pikachu1,[1,1,1],Pikachu1,1.,true);
-    m.restore();
+   //m.translate(0,-2,-5);
+   m.translate(0, 1.5, -1);
+   m.scale(.1, .1, .1);
+   m.rotateY(state.time);
+   drawShape(MOD.VR_simple, [1, 1, 1], VR_Base_Color, 1, true);
+   //myDrawShape([1, 1, 1], gl.TRIANGLES, pikachuVertices2, 2);
+
+
+   //drawShape(MOD.pikachu1,[1,1,1],Pikachu1,1.,true);
+   m.restore();
    //myDrawShape([1, 1, 1], gl.TRIANGLES, pikachuVertices, -1);
    m.save();
-      m.translate(0, 2 * TABLE_HEIGHT, (TABLE_DEPTH - HALL_WIDTH) / 2);
-      //m.aimZ([Math.cos(state.time),Math.sin(state.time),0]);
-      m.rotateY(state.time);
-      m.scale(.06,.06,.6);
-      //drawShape(lathe, [1,.2,0]);
-      m.restore();
+   m.translate(0, 2 * TABLE_HEIGHT, (TABLE_DEPTH - HALL_WIDTH) / 2);
+   //m.aimZ([Math.cos(state.time),Math.sin(state.time),0]);
+   m.rotateY(state.time);
+   m.scale(.06, .06, .6);
+   //drawShape(lathe, [1,.2,0]);
+   m.restore();
 
-      let A = [0,0,0];
-      let B = [1+.4*Math.sin(2 * state.time),.4*Math.cos(2 * state.time),0];
-      let C = CG.ik(.7,.7,B,[0,-1,-2]);
+   let A = [0, 0, 0];
+   let B = [1 + .4 * Math.sin(2 * state.time), .4 * Math.cos(2 * state.time), 0];
+   let C = CG.ik(.7, .7, B, [0, -1, -2]);
 
-      m.save();
-      m.translate(-.5, 2.5 * TABLE_HEIGHT, (TABLE_DEPTH - HALL_WIDTH) / 2);
-      //m.rotateY(state.time);
-      /*
-      m.save();
-         m.translate(A[0],A[1],A[2]).scale(.07);
-         drawShape(CG.sphere, [1,1,1]);
-      m.restore();
+   m.save();
+   m.translate(-.5, 2.5 * TABLE_HEIGHT, (TABLE_DEPTH - HALL_WIDTH) / 2);
+   //m.rotateY(state.time);
+   /*
+   m.save();
+      m.translate(A[0],A[1],A[2]).scale(.07);
+      drawShape(CG.sphere, [1,1,1]);
+   m.restore();
 
-      m.save();
-         m.translate(B[0],B[1],B[2]).scale(.07);
-         drawShape(CG.sphere, [1,1,1]);
-      m.restore();
+   m.save();
+      m.translate(B[0],B[1],B[2]).scale(.07);
+      drawShape(CG.sphere, [1,1,1]);
+   m.restore();
 
-      m.save();
-         m.translate(C[0],C[1],C[2]).scale(.07);
-         drawShape(CG.sphere, [1,1,1]);
-      m.restore();
-      */
-      state.isToon = true;
-      let skinColor = [1,.5,.3], D;
-      m.save();
-         D = CG.mix(A,C,.5);
-         m.translate(D[0],D[1],D[2]);
-         m.aimZ(CG.subtract(A,C));
-         m.scale(.05,.05,.05);
-         //drawShape(lathe, skinColor, -1,1, 2,1);
-         //mydrawShape(skinColor,gl.)
+   m.save();
+      m.translate(C[0],C[1],C[2]).scale(.07);
+      drawShape(CG.sphere, [1,1,1]);
+   m.restore();
+   */
+   state.isToon = true;
+   let skinColor = [1, .5, .3], D;
+   m.save();
+   D = CG.mix(A, C, .5);
+   m.translate(D[0], D[1], D[2]);
+   m.aimZ(CG.subtract(A, C));
+   m.scale(.05, .05, .05);
+   //drawShape(lathe, skinColor, -1,1, 2,1);
+   //mydrawShape(skinColor,gl.)
 
-         m.rotateY(state.time);
-         myDrawShape([1,.5,.3], gl.TRIANGLES, CG.l_arm_hold, 0);
-         
-      m.restore();
-
-      m.save();
-
-         D = CG.mix(C,B,.5);
-         m.translate(D[0],D[1],D[2]).aimZ(CG.subtract(C,B)).scale(.03,.03,.37);
-         drawShape(lathe, [1,1,1], 3, [1, 1,1]);
-      m.restore();
-      state.isToon = false;
+   m.rotateY(state.time);
+   myDrawShape([1, .5, .3], gl.TRIANGLES, MOD.l_arm_hold, 0);
 
    m.restore();
-      /*-----------------------------------------------------------------
-        Here is where we draw avatars and controllers.
-      -----------------------------------------------------------------*/
-   
+
+   m.save();
+
+   D = CG.mix(C, B, .5);
+   m.translate(D[0], D[1], D[2]).aimZ(CG.subtract(C, B)).scale(.03, .03, .37);
+   drawShape(lathe, [1, 1, 1], 3, [1, 1, 1]);
+   m.restore();
+   state.isToon = false;
+
+   m.restore();
+   /*-----------------------------------------------------------------
+     Here is where we draw avatars and controllers.
+   -----------------------------------------------------------------*/
+
    for (let id in MR.avatars) {
-      
+
       const avatar = MR.avatars[id];
 
       if (avatar.mode == MR.UserType.vr) {
          if (MR.playerid == avatar.playerid)
             continue;
-         
+
          let headsetPos = avatar.headset.position;
          let headsetRot = avatar.headset.orientation;
 
-         if(headsetPos == null || headsetRot == null)
+         if (headsetPos == null || headsetRot == null)
             continue;
 
          if (typeof headsetPos == 'undefined') {
             console.log(id);
             console.log("not defined");
          }
-         
+
          const rcontroller = avatar.rightController;
          const lcontroller = avatar.leftController;
-         
+
          let hpos = headsetPos.slice();
          hpos[1] += EYE_HEIGHT;
 
@@ -931,8 +972,8 @@ function myDraw(t, projMat, viewMat, state, eyeIdx, isMiniature) {
          let rpos = rcontroller.position.slice();
          rpos[1] += EYE_HEIGHT;
 
-         drawSyncController(rpos, rcontroller.orientation, [1,0,0]);
-         drawSyncController(lpos, lcontroller.orientation, [0,1,1]);
+         drawSyncController(rpos, rcontroller.orientation, [1, 0, 0]);
+         drawSyncController(lpos, lcontroller.orientation, [0, 1, 1]);
       }
    }
 }
@@ -948,7 +989,7 @@ function onEndFrame(t, state) {
 
    -----------------------------------------------------------------*/
 
-   const input  = state.input;
+   const input = state.input;
 
    if (input.HS != null) {
 
@@ -957,7 +998,7 @@ function onEndFrame(t, state) {
 
       this.audioContext1.updateListener(input.HS.position(), input.HS.orientation());
       this.audioContext2.updateListener(input.HS.position(), input.HS.orientation());
-   
+
       // Here you initiate the 360 spatial audio playback from a given position,
       // in this case controller position, this can be anything,
       // i.e. a speaker, or an drum in the room.
@@ -1019,18 +1060,18 @@ function checkIntersection(point, verts) {
 // see above
 
 function calcBoundingBox(verts) {
-   const min = [Number.MAX_VALUE,Number.MAX_VALUE,Number.MAX_VALUE];
-   const max = [Number.MIN_VALUE,Number.MIN_VALUE,Number.MIN_VALUE];
-    
-   for(let i = 0; i < verts.length; i+=2){
+   const min = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
+   const max = [Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE];
 
-      if(verts[i] < min[0]) min[0] = verts[i];
-      if(verts[i+1] < min[1]) min[1] = verts[i+1];
-      if(verts[i+2] < min[2]) min[2] = verts[i+2];
+   for (let i = 0; i < verts.length; i += 2) {
 
-      if(verts[i] > max[0]) max[0] = verts[i];
-      if(verts[i+1] > max[1]) max[1] = verts[i+1];
-      if(verts[i+2] > max[2]) max[2] = verts[i+2];
+      if (verts[i] < min[0]) min[0] = verts[i];
+      if (verts[i + 1] < min[1]) min[1] = verts[i + 1];
+      if (verts[i + 2] < min[2]) min[2] = verts[i + 2];
+
+      if (verts[i] > max[0]) max[0] = verts[i];
+      if (verts[i + 1] > max[1]) max[1] = verts[i + 1];
+      if (verts[i + 2] > max[2]) max[2] = verts[i + 2];
    }
 
    return [min, max];
