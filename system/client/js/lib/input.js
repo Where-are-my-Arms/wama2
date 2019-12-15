@@ -1,14 +1,14 @@
 "use strict";
 
 //code.iamkate.com
-function Queue(){var a=[],b=0;this.getLength=function(){return a.length-b};this.isEmpty=function(){return 0==a.length};this.enqueue=function(b){a.push(b)};this.dequeue=function(){if(0!=a.length){var c=a[b];2*++b>=a.length&&(a=a.slice(b),b=0);return c}};this.peek=function(){return 0<a.length?a[b]:void 0}};
+function Queue() { var a = [], b = 0; this.getLength = function () { return a.length - b }; this.isEmpty = function () { return 0 == a.length }; this.enqueue = function (b) { a.push(b) }; this.dequeue = function () { if (0 != a.length) { var c = a[b]; 2 * ++b >= a.length && (a = a.slice(b), b = 0); return c } }; this.peek = function () { return 0 < a.length ? a[b] : void 0 } };
 
 
 window.Input = {};
 window.Input.INPUT_TYPE_KEYDOWN = "keydown";
-window.Input.INPUT_TYPE_KEYUP   = "keyup";
+window.Input.INPUT_TYPE_KEYUP = "keyup";
 
-window.Input.initKeyEvents = function(keypoll) {
+window.Input.initKeyEvents = function (keypoll) {
 
     MR._keypoll = keypoll;
 
@@ -47,10 +47,10 @@ window.Input.initKeyEvents = function(keypoll) {
 };
 
 
-window.Input.updateKeyState = function() {
-    const keyPrev    = MR.input.keyPrev;
+window.Input.updateKeyState = function () {
+    const keyPrev = MR.input.keyPrev;
     const keyPrevLen = MR.input.keyPrev.length;
-    const keyCurr    = MR.input.keyCurr;
+    const keyCurr = MR.input.keyCurr;
 
     for (let i = 0; i < keyPrevLen; i += 1) {
         keyPrev[i] = keyCurr[i];
@@ -77,50 +77,50 @@ window.Input.updateKeyState = function() {
     }
 };
 
-window.Input.keyWentDown = function(code) {
+window.Input.keyWentDown = function (code) {
     return !MR.input.keyPrev[code] && MR.input.keyCurr[code];
 };
-window.Input.keyWentDownNum = function(code) {
+window.Input.keyWentDownNum = function (code) {
     return (~MR.input.keyPrev[code]) & MR.input.keyCurr[code];
 };
 
-window.Input.keyIsDown = function(code) {
+window.Input.keyIsDown = function (code) {
     return MR.input.keyCurr[code];
 };
-window.Input.keyIsDownNum = function(code) {
+window.Input.keyIsDownNum = function (code) {
     return MR.input.keyCurr[code];
 };
-window.Input.keyIsUp = function(code) {
+window.Input.keyIsUp = function (code) {
     return !MR.input.keyCurr[code];
 };
-window.Input.keyIsUpNum = function(code) {
+window.Input.keyIsUpNum = function (code) {
     return ~MR.input.keyCurr[code];
 };
 
-window.Input.keyWentUp = function(code) {
+window.Input.keyWentUp = function (code) {
     return MR.input.keyPrev[code] && !MR.input.keyCurr[code];
 };
-window.Input.keyWentUpNum = function(code) {
+window.Input.keyWentUpNum = function (code) {
     return MR.input.keyPrev[code] & (~MR.input.keyCurr[code]);
 };
 
-window.Input.registerKeyDownHandler = function(handler) {
+window.Input.registerKeyDownHandler = function (handler) {
     MR._keydown = handler;
 }
-window.Input.registerKeyUpHandler = function(handler) {
+window.Input.registerKeyUpHandler = function (handler) {
     MR._keyup = handler;
 }
-window.Input.deregisterKeyHandlers = function() {
+window.Input.deregisterKeyHandlers = function () {
     MR._keydown = null;
-    MR._keyup   = null;
+    MR._keyup = null;
 }
 
-window.Input.KEY_LEFT  = 37;
-window.Input.KEY_UP    = 38;
+window.Input.KEY_LEFT = 37;
+window.Input.KEY_UP = 38;
 window.Input.KEY_RIGHT = 39;
-window.Input.KEY_DOWN  = 40;
+window.Input.KEY_DOWN = 40;
 window.Input.KEY_SHIFT = 16; // shift
-window.Input.KEY_ZERO  = 48; // 0
+window.Input.KEY_ZERO = 48; // 0
 window.Input.KEY_CONTROL = 17; // control
 window.Input.KEY_A = 65;
 window.Input.KEY_W = 87
@@ -133,16 +133,8 @@ Input.updateControllerState = () => {
         MR.headset = MR.frameData();
         let left_is_0 = MR.controllers[0].id.indexOf('Left') > 0;
         if (MR.controllers) {
-            MR.leftController  = MR.controllers[left_is_0 ? 0 : 1];
+            MR.leftController = MR.controllers[left_is_0 ? 0 : 1];
             MR.rightController = MR.controllers[left_is_0 ? 1 : 0];
         }
     }
 }
-<<<<<<< HEAD
-=======
-
-
-
-
-
->>>>>>> models/import-models

@@ -49,43 +49,43 @@ const datastore = new DataStore();
 const Calibrator = require("./calibrator.js");
 
 const parser = new argparse.ArgumentParser({
-  version: "0.0.1",
-  addHelp:true,
-  description: "webxr server"
+    version: "0.0.1",
+    addHelp: true,
+    description: "webxr server"
 });
 parser.addArgument(
-  [ "-p", "--port" ],
-  {
-    help: "port to listen on",
-    defaultValue: 11235
-  }
-);
-parser.addArgument(
-    [ "-t", "--tick" ],
+    ["-p", "--port"],
     {
-      help: "interval to broadcast server time 'tick' to clients (in ms)",
-      defaultValue: 2000
+        help: "port to listen on",
+        defaultValue: 11235
     }
 );
 parser.addArgument(
-    [ "-a", "--avatar" ],
+    ["-t", "--tick"],
     {
-      help: "interval to broadcast avatars to clients (in ms)",
-      defaultValue: 10
+        help: "interval to broadcast server time 'tick' to clients (in ms)",
+        defaultValue: 2000
     }
 );
 parser.addArgument(
-    [ "-b", "--broadcast" ],
+    ["-a", "--avatar"],
     {
-      help: "interval to broadcast messages to clients (in ms)",
-      defaultValue: 1
+        help: "interval to broadcast avatars to clients (in ms)",
+        defaultValue: 10
     }
 );
 parser.addArgument(
-    [ "-hb", "--heartbeat" ],
+    ["-b", "--broadcast"],
     {
-      help: "interval to heartbeat ping pong messages to clients (in ms)",
-      defaultValue: 300
+        help: "interval to broadcast messages to clients (in ms)",
+        defaultValue: 1
+    }
+);
+parser.addArgument(
+    ["-hb", "--heartbeat"],
+    {
+        help: "interval to heartbeat ping pong messages to clients (in ms)",
+        defaultValue: 300
     }
 );
 
@@ -106,7 +106,7 @@ let avatars = {};
 
 setInterval(() => {
     console.log("current connections:");
-    console.log(Array.from(websocketMap.keys() ));
+    console.log(Array.from(websocketMap.keys()));
     console.log("avatars: ");
     console.log(avatars);
 }, 5000);
@@ -118,23 +118,23 @@ setInterval(() => {
 // ?vel {x,y,z}
 // ?acc {x,y,z}
 // controllerState {
-    // left:{
-        // back trigger
-        // side trigger
-        // one
-        // two
-        // stick {
-            // x,y
-        // }
-    // }
-    // right:
-    // same as above
+// left:{
+// back trigger
+// side trigger
+// one
+// two
+// stick {
+// x,y
+// }
+// }
+// right:
+// same as above
 // }
 // }
 
 
-function noop() {}
- 
+function noop() { }
+
 function heartbeat() {
     this.isAlive = true;
 }
@@ -142,16 +142,16 @@ function heartbeat() {
 function send(to, from, message) {
     if (to == "*") {
         messageQueue.push({
-                "src": from,
-                "dst": "*", 
-                "message": message
-            });
+            "src": from,
+            "dst": "*",
+            "message": message
+        });
     } else {
         messageQueue.push({
-                "src": from,
-                "dst": to,
-                "message": message
-            });
+            "src": from,
+            "dst": to,
+            "message": message
+        });
     }
 }
 
@@ -209,7 +209,7 @@ try {
                 // if (!dst.isAlive) {
                 //     return;
                 // }
-                
+
             }
         }
 
@@ -217,9 +217,9 @@ try {
     }
 
     function leave(index, username) {
-        
-        console.log("close: websocketMap.keys():", Array.from(websocketMap.keys() ));
-        
+
+        console.log("close: websocketMap.keys():", Array.from(websocketMap.keys()));
+
         if (!websocketMap.get(index)) {
             return;
         }
@@ -286,7 +286,7 @@ try {
 
             try {
                 json = JSON.parse(data.toString());
-            } catch(err) {
+            } catch (err) {
                 // console.log(err);
                 return;
             }
@@ -297,7 +297,7 @@ try {
                 const lockid = json["lockid"];
                 const state = json["state"];
 
-                if(datastore.acquire(key, lockid)) {
+                if (datastore.acquire(key, lockid)) {
                     datastore.setObjectData(key, state);
                     // console.log(datastore.state);
 
@@ -322,14 +322,13 @@ try {
                     send(ws.index, -1, response);
                     console.log("object in use.");
                 }
-<<<<<<< HEAD
             } else if (json["type"] == "updateBlob") {
 
                 const key = json["uid"];
                 const lockid = json["lockid"];
                 const state = json["state"];
 
-                if(datastore.acquire(key, lockid)) {
+                if (datastore.acquire(key, lockid)) {
                     datastore.setObjectData(key, state);
                     // console.log(datastore.state);
 
@@ -355,10 +354,7 @@ try {
                     send(ws.index, -1, response);
                     console.log("object in use.");
                 }
-=======
-
->>>>>>> models/import-models
-            } else if(json["type"] == "spawn") {
+            } else if (json["type"] == "spawn") {
                 // This depends on the spawn logic we want to add.
                 const key = json["uid"];
                 const lockid = json["lockid"];
@@ -367,7 +363,7 @@ try {
                 if (!datastore.exists(key)) {
                     datastore.add(key);
                     datastore.setObjectData(key, state);
-                    datastore.lock(key,lockid);
+                    datastore.lock(key, lockid);
 
                     const response = {
                         "type": "spawn",
@@ -386,7 +382,6 @@ try {
                     };
                     send(ws.index, -1, response);
                 }
-<<<<<<< HEAD
             } else if (json["type"] == "spawnBlob") {
                 const key = json["uid"];
                 const lockid = json["lockid"];
@@ -395,7 +390,7 @@ try {
                 if (!datastore.exists(key)) {
                     datastore.add(key);
                     datastore.setObjectData(key, state);
-                    datastore.lock(key,lockid);
+                    datastore.lock(key, lockid);
 
                     const response = {
                         "type": "spawnBlob",
@@ -414,9 +409,6 @@ try {
                     };
                     send(ws.index, -1, response);
                 }
-=======
-
->>>>>>> models/import-models
             } else if (json["type"] == "delete") {
 
                 const key = json["uid"];
@@ -443,14 +435,14 @@ try {
                 }
 
             } else if (json["type"] == "lock") {
-          
+
                 const key = json["uid"];
                 const lockid = json["lockid"];
 
                 // if successful, broadcast success to everyone
                 if (datastore.acquire(key, lockid)) {
                     datastore.lock(key, lockid);
-                   
+
                     const response = {
                         "type": "lock",
                         "uid": key,
@@ -458,7 +450,7 @@ try {
                     };
 
                     send("*", -1, response);
-                // else respond with failure to sender only
+                    // else respond with failure to sender only
                 } else {
 
                     const response = {
@@ -470,7 +462,7 @@ try {
                     send(ws.index, -1, response);
                 }
 
-            } else if(json["type"] == "release") {
+            } else if (json["type"] == "release") {
 
                 const key = json["uid"];
                 const lockid = json["lockid"];
@@ -486,7 +478,7 @@ try {
                     };
 
                     send("*", -1, response);
-                // else respond with failure to sender only
+                    // else respond with failure to sender only
                 } else {
 
                     const response = {
@@ -498,7 +490,7 @@ try {
                     send(ws.index, -1, response);
                 }
 
-            } else if(json["type"] == "activate") {
+            } else if (json["type"] == "activate") {
 
                 const key = json["uid"];
 
@@ -527,7 +519,7 @@ try {
                     send(ws.index, -1, response);
                 }
 
-            } else if(json["type"] == "deactivate") {
+            } else if (json["type"] == "deactivate") {
 
                 const key = json["uid"];
                 // TODO:
@@ -542,7 +534,7 @@ try {
 
                 send("*", -1, response);
 
-            } else if(json["type"] == "restart") {
+            } else if (json["type"] == "restart") {
 
                 const response = {
                     "type": "clear"
@@ -599,7 +591,7 @@ try {
                         "type": "calibrate",
                         "success": false
                     };
-                    
+
                     send(ws.index, -1, response);
                 }
 
@@ -642,7 +634,7 @@ try {
             send("*", -1, response);
         }, AVATAR_RATE);
 
-   });
+    });
 } catch (err) {
-   console.log("couldn't load websocket: ", err);
+    console.log("couldn't load websocket: ", err);
 }

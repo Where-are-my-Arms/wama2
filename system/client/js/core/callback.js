@@ -1,6 +1,5 @@
 'use strict';
 
-<<<<<<< HEAD
 /**
  * Below part copied from week10.js, should have better way to share them
  */
@@ -21,67 +20,67 @@ let BLOB_COLORS = [
 
 function Blob() {
     let uid, position, color, birth, death, wasTouched, revived, mode;
- 
+
     let randomPosition = () => {
-       let pos;
-       let a = Math.random() * HALL_WIDTH - HALL_WIDTH / 2;
-       let b = Math.random() * HALL_WIDTH - HALL_WIDTH / 2;
-       let c = Math.random() < 0.5 ? -1 : 1;
-       let d = Math.random();
- 
-       //position = [0,-HALL_WIDTH/2, 0];	
-       if (d < 0.33) {
-          pos = [a, b, c * HALL_WIDTH / 2];
-       } else if (d < 0.67) {
-          pos = [a, c * HALL_WIDTH / 2, b];
-       } else {
-          pos = [c * HALL_WIDTH / 2, a, b];
-       }
-       return pos
+        let pos;
+        let a = Math.random() * HALL_WIDTH - HALL_WIDTH / 2;
+        let b = Math.random() * HALL_WIDTH - HALL_WIDTH / 2;
+        let c = Math.random() < 0.5 ? -1 : 1;
+        let d = Math.random();
+
+        //position = [0,-HALL_WIDTH/2, 0];	
+        if (d < 0.33) {
+            pos = [a, b, c * HALL_WIDTH / 2];
+        } else if (d < 0.67) {
+            pos = [a, c * HALL_WIDTH / 2, b];
+        } else {
+            pos = [c * HALL_WIDTH / 2, a, b];
+        }
+        return pos
     };
     let fixedPositions = (nx, ny, nz) => {
-       // nx, ny, nz are the number of blobs you want in each direction
-       let pos;
-       let x = nx + 1;
-       let y = ny + 1;
-       let z = nz + 1;
- 
-       let dx = HALL_WIDTH / x;
-       let dy = HALL_WIDTH / y;
-       let dz = HALL_WIDTH / z;
- 
-       let ix = Math.floor(Math.random() * nx) + 1;
-       let iy = Math.floor(Math.random() * ny) + 1;
-       let iz = Math.floor(Math.random() * nz) + 1;
- 
-       let px = ix * dx - (HALL_WIDTH / 2);
-       let py = iy * dy - HALL_WIDTH;
-       let pz = iz * dz - (HALL_WIDTH / 2);
-       pos = [px, py, pz];
-       //console.log([dx, dy, dz]);
-       //console.log([0,-HALL_WIDTH / 2, 0]);
-       //console.log(pos);
-       return pos;
+        // nx, ny, nz are the number of blobs you want in each direction
+        let pos;
+        let x = nx + 1;
+        let y = ny + 1;
+        let z = nz + 1;
+
+        let dx = HALL_WIDTH / x;
+        let dy = HALL_WIDTH / y;
+        let dz = HALL_WIDTH / z;
+
+        let ix = Math.floor(Math.random() * nx) + 1;
+        let iy = Math.floor(Math.random() * ny) + 1;
+        let iz = Math.floor(Math.random() * nz) + 1;
+
+        let px = ix * dx - (HALL_WIDTH / 2);
+        let py = iy * dy - HALL_WIDTH;
+        let pz = iz * dz - (HALL_WIDTH / 2);
+        pos = [px, py, pz];
+        //console.log([dx, dy, dz]);
+        //console.log([0,-HALL_WIDTH / 2, 0]);
+        //console.log(pos);
+        return pos;
     };
- 
+
     let setPosition = () => {
-       // TODO: ensure that nothing on the ceiling, and on floor?
-       // TODO: ensure things are in reach
-       switch (mode) {
-          case RANDOM:
-             position = randomPosition();
-             break;
-          case FIXED:
-             position = fixedPositions(3, 3, 3);
-             break;
-          default:
-             position = fixedPositions(3, 3, 3);
-       }
+        // TODO: ensure that nothing on the ceiling, and on floor?
+        // TODO: ensure things are in reach
+        switch (mode) {
+            case RANDOM:
+                position = randomPosition();
+                break;
+            case FIXED:
+                position = fixedPositions(3, 3, 3);
+                break;
+            default:
+                position = fixedPositions(3, 3, 3);
+        }
     }
     let setColor = () => {
-       color = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
+        color = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
     };
- 
+
     this.load = (uidOri, positionOri, colorOri, birthOri, deathOri, wasTouchedOri, revivedOri, modeOri) => {
         uid = uidOri;
         position = positionOri;
@@ -91,13 +90,13 @@ function Blob() {
         wasTouched = wasTouchedOri;
         revived = revivedOri;
         mode = modeOri;
-     }
- 
-    this.makeTouched = () => {
-       color = [0, 0, 0];
-       wasTouched = true;
     }
- 
+
+    this.makeTouched = () => {
+        color = [0, 0, 0];
+        wasTouched = true;
+    }
+
     this.getUid = () => { return uid };
     this.getColor = () => { return color };
     this.getPos = () => { return position };
@@ -106,44 +105,42 @@ function Blob() {
     this.getWasTouched = () => { return wasTouched };
     this.getRevived = () => { return revived };
     this.getMode = () => { return mode };
-    
+
     this.setUid = (uidOri) => { uid = uidOri }
     this.isAlive = (frame) => { return (frame >= birth && frame < death); };
     this.kill = (currentFrame) => {
-       death = currentFrame + 50;
+        death = currentFrame + 50;
     };
     this.revived = () => { return revived; };
     this.setRevived = () => { revived = true; };
     this.setNotRevived = () => { revived = false; };
     this.setup = (currentFrame) => {
-       birth = currentFrame + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
-       death = birth + BLOB_LIFE;
-       wasTouched = false;
-       mode = FIXED;
-       // position = [0, HALL_WIDTH/2, 0];
-       setPosition();
-       setColor();
+        birth = currentFrame + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
+        death = birth + BLOB_LIFE;
+        wasTouched = false;
+        mode = FIXED;
+        // position = [0, HALL_WIDTH/2, 0];
+        setPosition();
+        setColor();
     }
     this.wasTouched = () => {
-       return wasTouched;
+        return wasTouched;
     };
     // THIS IS NOT WORKING
     this.isTouched = (input) => {
-       let lPos = input.LC.tip();
-       let rPos = input.RC.tip();
-       // let touched = (CG.distance(lPos, position) <= BLOB_SIZE || CG.distance(rPos, position) <= BLOB_SIZE);
-       let touched = (CG.distance(rPos, position) <= BLOB_SIZE);
-       return touched;
+        let lPos = input.LC.tip();
+        let rPos = input.RC.tip();
+        // let touched = (CG.distance(lPos, position) <= BLOB_SIZE || CG.distance(rPos, position) <= BLOB_SIZE);
+        let touched = (CG.distance(rPos, position) <= BLOB_SIZE);
+        return touched;
     }
     this.isValid = () => { return (color[0] == CURRENT_COLOR[0] && color[1] == CURRENT_COLOR[1] && color[1] == CURRENT_COLOR[1]); };
- } 
+}
 
 /**
  * Above part copied from week10.js, should have better way to share them
  */
 
-=======
->>>>>>> models/import-models
 MR.syncClient.eventBus.subscribe("platform", (json) => {
 
 });
@@ -333,7 +330,6 @@ MR.syncClient.eventBus.subscribe("spawn", (json) => {
 
 });
 
-<<<<<<< HEAD
 // Response to sendSpawnBlobMessage from client side
 MR.syncClient.eventBus.subscribe("spawnBlob", (json) => {
 
@@ -359,24 +355,21 @@ MR.syncClient.eventBus.subscribe("spawnBlob", (json) => {
 
 });
 
-=======
->>>>>>> models/import-models
 MR.syncClient.eventBus.subscribe("object", (json) => {
     const success = json["success"];
-     if (success) {
-      console.log("object moved: ", json);
-      // update update metadata for next frame's rendering
-      let current = MR.objs[json["uid"]];
-      console.log(json);
-      current.position = [json["state"]["position"][0], json["state"]["position"][1], json["state"]["position"][2]];
-    //current.orientation = MR.objs[json["state"]["orientation"]];
+    if (success) {
+        console.log("object moved: ", json);
+        // update update metadata for next frame's rendering
+        let current = MR.objs[json["uid"]];
+        console.log(json);
+        current.position = [json["state"]["position"][0], json["state"]["position"][1], json["state"]["position"][2]];
+        //current.orientation = MR.objs[json["state"]["orientation"]];
     }
-    else{
-      console.log("failed object message", json);
+    else {
+        console.log("failed object message", json);
     }
 });
 
-<<<<<<< HEAD
 MR.syncClient.eventBus.subscribe("updateBlob", (json) => {
 
     const success = json["success"];
@@ -402,8 +395,6 @@ MR.syncClient.eventBus.subscribe("updateBlob", (json) => {
 
 });
 
-=======
->>>>>>> models/import-models
 // on success
 // const response = {
 //   "type": "calibrate",
@@ -424,16 +415,14 @@ MR.syncClient.eventBus.subscribe("calibration", (json) => {
 });
 
 
-function pollAvatarData() 
-{
-    if (MR.VRIsActive()) 
-    {
+function pollAvatarData() {
+    if (MR.VRIsActive()) {
         const frameData = MR.frameData();
         if (frameData != null) {
             //User Headset
             // const leftInverseView = CG.matrixInverse(frameData.leftViewMatrix);
             // const rightInverseView = CG.matrixInverse(frameData.rightViewMatrix);
-            
+
             // const leftHeadsetPos = CG.matrixTransform(leftInverseView, frameData.pose.position);
             // const rightHeadsetPos = CG.matrixTransform(rightInverseView, frameData.pose.position);
             // const headsetPos = CG.mix(leftHeadsetPos, rightHeadsetPos);
