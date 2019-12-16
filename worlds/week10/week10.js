@@ -819,7 +819,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
    let drawScoreBoard = (score) => {
       const scoreColorGold = [1, 0.84, 0];
 
-      let divs = score / 5;
+      let divs = Math.floor(score / 5);
       let remain = score % 5;
 
       let drawFive = () => {
