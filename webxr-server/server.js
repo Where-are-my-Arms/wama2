@@ -547,6 +547,14 @@ try {
                 // pass stuff around for passing code between clients
             } else if (json["type"] == "users") {
                 // list connected users
+            } else if (json["type"] == "score") {
+                const score = json["score"];
+                const response = {
+                    "type": "score",
+                    "score": score,
+                    "success": true,
+                };
+                send("*", -1, response);
             }
 
             // TODO: outgoing messages

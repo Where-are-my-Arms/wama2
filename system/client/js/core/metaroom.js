@@ -264,6 +264,7 @@ MR.avatars = {};
 MR.playerid = -1;
 MR.playerType = MR.UserType.browser;
 MR.tick = -1;
+MR.score = 0;
 
 MR.objs = [];
 MR.blobs = [];

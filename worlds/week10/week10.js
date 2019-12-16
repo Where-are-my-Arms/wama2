@@ -542,6 +542,14 @@ function sendSpawnMessage(object){
    MR.syncClient.send(response);
 }
 
+function sendScoreMessage(score) {
+   const response = {
+      type: "score",
+      score: score,
+   };
+   MR.syncClient.send(response);
+}
+
 function onStartFrame(t, state) {
    // console.log("ONFRAMESTART, PLAYSOUND " + playSound);
    /*-----------------------------------------------------------------
@@ -731,7 +739,8 @@ function onStartFrame(t, state) {
 						//b.setup(state.frame+10);
 						b.kill();
 						b.makeTouched();
-						sendUpdateObjectMessage(b);
+                  sendUpdateObjectMessage(b);
+                  sendScoreMessage(++ MR.score);
 					} else {
 						b.lock.request(b.uid);
 					}
@@ -805,7 +814,52 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 				 drawShape(CG.cylinder, [0.1,0.1,0.1]);
 			 m.restore();
 		m.restore();
-	}
+   }
+   
+   let drawScoreBoard = (score) => {
+      const scoreColorGold = [1, 0.84, 0];
+
+      let divs = score / 5;
+      let remain = score % 5;
+
+      let drawFive = () => {
+         m.save();
+            // Draw 4 vertical lines
+            m.save();
+               m.scale(0.001, 0.005, 0.04);
+               for (let i = 0; i < 4; i ++) {
+                  drawShape(CG.cylinder, scoreColorGold);
+                  m.translate(0, 4, 0);
+               }
+            m.restore();
+
+            // Draw last line
+            m.rotateX(Math.PI / 3);
+            m.scale(0.001, 0.005, 0.056);
+            m.translate(0, 3, -0.45);
+            drawShape(CG.cylinder, scoreColorGold);
+         m.restore();
+      }
+
+      m.save();
+         m.translate(-0.4, 3 / 4 * HALL_WIDTH - 0.4, -0.9 * HALL_WIDTH / 2);
+         m.rotateY(Math.PI / 2);
+         m.rotateX(Math.PI / 2);
+         
+         for (let i = 0; i < divs; i ++) {
+            drawFive();
+            m.translate(0, 0.12, 0);
+         }
+
+         m.save();
+            m.scale(0.001, 0.005, 0.04);
+            for (let i = 0; i < remain; i ++) {
+               drawShape(CG.cylinder, scoreColorGold);
+               m.translate(0, 4, 0);
+            }
+         m.restore();
+      m.restore();
+   }
 
 	let drawTable = (x, y) => {
 		m.save();
@@ -1158,6 +1212,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 	}
 	if (MR.gameState.MODE == PLAY) {
 		drawTimer(timer);
+      drawScoreBoard(MR.score);
 	}
 	m.save();
 		m.translate(0,HALL_WIDTH/2,0)// translate so you're standing on the floor

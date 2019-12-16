@@ -261,6 +261,16 @@ MR.syncClient.eventBus.subscribe("calibration", (json) => {
     console.log("world tick: ", json);
 });
 
+MR.syncClient.eventBus.subscribe("score", (json) => {
+    const success = json["success"];
+    if (success) {
+        MR.score = json["score"];
+    } else {
+        console.log("failed score message", json);
+    }
+
+});
+
 function updateBlobState(i, state) {
 	let blob = MR.blobs[i];
 	blob.position = [state["position"][0], state["position"][1], state["position"][2]];
