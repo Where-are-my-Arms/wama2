@@ -711,42 +711,46 @@ function onStartFrame(t, state) {
 				ROOM_COLOR = PLAY_COLOR;
 			}	
 	} else if (MR.gameState.MODE == PLAY) {
-		for(let i=0; i<BLOB_COUNT; i++) {
-			let b = MR.blobs[i];
-			if (b.isAlive() && b.wasRevived()){
-				//console.log("just came to life");
-				//if (b.lock.locked) {
-					b.setNotRevived();
-					//sendUpdateObjectMessage(b);
-				//} else {
-					//b.lock.request(b.uid);
-				//}
-			}else if (!b.isAlive() && !b.wasRevived()) {
-				if (b.lock.locked) {
-					console.log("reviving", b.uid);
-					b.setup();
-					b.setRevived();
-					sendUpdateObjectMessage(b);
-				} else {
-					b.lock.request(b.uid);
-				}
-			} else {
-				if(input.LC && b.isAlive() && !b.wastouched() && b.isTouched(input) && b.isValid()) {
-					if (b.lock.locked) {
-						console.log("got one.", b.uid)
-						playSound = true;
-						soundPosition = b.getPos();
-						//b.setup(state.frame+10);
-						b.kill();
-						b.makeTouched();
+      if (timer.timeLeft() <= 0) {
+         MR.gameState.MODE = END;
+      } else {
+         for(let i=0; i<BLOB_COUNT; i++) {
+            let b = MR.blobs[i];
+            if (b.isAlive() && b.wasRevived()){
+               //console.log("just came to life");
+               //if (b.lock.locked) {
+                  b.setNotRevived();
+                  //sendUpdateObjectMessage(b);
+               //} else {
+                  //b.lock.request(b.uid);
+               //}
+            }else if (!b.isAlive() && !b.wasRevived()) {
+               if (b.lock.locked) {
+                  console.log("reviving", b.uid);
+                  b.setup();
+                  b.setRevived();
                   sendUpdateObjectMessage(b);
-                  sendScoreMessage(++ MR.score);
-					} else {
-						b.lock.request(b.uid);
-					}
-				} 
-			}
-		}
+               } else {
+                  b.lock.request(b.uid);
+               }
+            } else {
+               if(input.LC && b.isAlive() && !b.wastouched() && b.isTouched(input) && b.isValid()) {
+                  if (b.lock.locked) {
+                     console.log("got one.", b.uid)
+                     playSound = true;
+                     soundPosition = b.getPos();
+                     //b.setup(state.frame+10);
+                     b.kill();
+                     b.makeTouched();
+                     sendUpdateObjectMessage(b);
+                     sendScoreMessage(++ MR.score);
+                  } else {
+                     b.lock.request(b.uid);
+                  }
+               } 
+            }
+         }
+      }
 	}
 
    if(state.frame % COLOR_TIME == 0) {
