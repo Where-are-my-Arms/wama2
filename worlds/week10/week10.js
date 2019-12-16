@@ -1214,9 +1214,9 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 	if (MR.gameState.MODE == START) {
 		drawTable(0,0);
 	}
-	if (MR.gameState.MODE == PLAY) {
+	if (MR.gameState.MODE == PLAY || MR.gameState.MODE == END) {
 		drawTimer(timer);
-      drawScoreBoard(MR.score);
+      	drawScoreBoard(MR.score);
 	}
 	m.save();
 		m.translate(0,HALL_WIDTH/2,0)// translate so you're standing on the floor
