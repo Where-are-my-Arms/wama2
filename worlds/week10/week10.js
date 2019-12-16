@@ -70,7 +70,7 @@ let lathe = CG.createMeshVertices(10, 16, CG.uvToLathe,
 ////////////////////////////// SCENE SPECIFIC CODE
 const WOOD = 0,
       TILES = 1,
-      NOISY_BUMP = 2;
+      VR_Base_Color = 2;
 
 let noise = new ImprovedNoise();
 let m = new Matrix();
@@ -175,7 +175,7 @@ async function setup(state) {
    const images = await imgutil.loadImagesPromise([
       getPath("textures/wood.png"),
       getPath("textures/tiles.jpg"),
-      getPath("textures/noisy_bump.jpg")
+      getPath("textures/VR_Base_Color.png")
    ]);
 
    let libSources = await MREditor.loadAndRegisterShaderLibrariesForLiveEditing(gl, "libs", [
@@ -785,23 +785,46 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 
 	const input  = state.input;
 
-	let drawShape = (shape, color, texture, textureScale) => {
-		gl.uniform4fv(state.uColorLoc, color.length == 4 ? color : color.concat([1]));
-		gl.uniformMatrix4fv(state.uModelLoc, false, m.value());
-		gl.uniform1i(state.uTexIndexLoc, texture === undefined ? -1 : texture);
-		gl.uniform1f(state.uTexScale, textureScale === undefined ? 1 : textureScale);
-		if (shape != prev_shape)
-			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array( shape ), gl.STATIC_DRAW);
-		if (state.isToon) {
-			gl.uniform1f (state.uToonLoc, .3 * CG.norm(m.value().slice(0,3)));
-			gl.cullFace(gl.FRONT);
-			gl.drawArrays(shape == CG.cube ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
-			gl.cullFace(gl.BACK);
-			gl.uniform1f (state.uToonLoc, 0);
-		}
-		gl.drawArrays(shape == CG.cube ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
-		prev_shape = shape;
-	}
+	
+   let drawShape = (shape, color, texture, textureScale, flag) => {
+      gl.uniform4fv(state.uColorLoc, color.length == 4 ? color : color.concat([1]));
+      gl.uniformMatrix4fv(state.uModelLoc, false, m.value());
+      gl.uniform1i(state.uTexIndexLoc, texture === undefined ? -1 : texture);
+      gl.uniform1f(state.uTexScale, textureScale === undefined ? 1 : textureScale);
+      if (flag === undefined) flag = false;
+      if (shape == CG.cube) flag = true;
+      if (shape != prev_shape)
+         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shape), gl.STATIC_DRAW);
+      if (state.isToon) {
+         gl.uniform1f(state.uToonLoc, .3 * CG.norm(m.value().slice(0, 3)));
+         gl.cullFace(gl.FRONT);
+         gl.drawArrays(flag ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
+         gl.cullFace(gl.BACK);
+         gl.uniform1f(state.uToonLoc, 0);
+      }
+      gl.drawArrays(flag ? gl.TRIANGLES : gl.TRIANGLE_STRIP, 0, shape.length / VERTEX_SIZE);
+      prev_shape = shape;
+   }
+
+   let drawModHand = (isRight, color) => {
+      m.save();
+      m.scale(.1);
+      if (isRight == 1) {
+         m.rotateY(-Math.PI / 2);
+         drawShape(MOD.right_hand, color, -1, 1., true);
+      } else {
+         m.rotateY(Math.PI / 2);
+         drawShape(MOD.left_hand, color, -1, 1., true);
+      }
+      m.restore();
+   }
+   let drawVRHeadset = () => {
+     m.save();
+     m.rotateY(Math.PI);
+     //m.scale(.1);
+     drawShape(MOD.VR_simple,[1,1,1],VR_Base_Color,1.,true);
+     m.restore();
+   }
 
 	let drawTimer = (timer) => {
 		m.save();
@@ -917,66 +940,70 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
    let drawController = (C, hand, color) => {
       let P = C.position();
       m.save();
-         m.multiply(state.avatarMatrixForward);
-         m.translate(P[0],P[1],P[2]);
-         m.rotateQ(C.orientation());
-         m.translate(0,.02,-.005);
-         m.rotateX(.75);
-         m.save();
-            m.translate(0,0,-.0095).scale(.004,.004,.003);
-            drawShape(CG.sphere, C.isDown() ? [10,0,0] : color);
-         m.restore();
-         m.save();
-            m.translate(0,0,-.01).scale(.04,.04,.13);
-            drawShape(CG.torus1, color);
-         m.restore();
-         m.save();
-            m.translate(0,-.0135,-.008).scale(.04,.0235,.0015);
-            drawShape(CG.cylinder, color);
-         m.restore();
-         m.save();
-            m.translate(0,-.01,.03).scale(.012,.02,.037);
-            drawShape(CG.cylinder, color);
-         m.restore();
-         m.save();
-            m.translate(0,-.01,.067).scale(.012,.02,.023);
-            drawShape(CG.sphere, color);
-         m.restore();
+      m.multiply(state.avatarMatrixForward);
+      m.translate(P[0], P[1], P[2]);
+      m.rotateQ(C.orientation());
+      m.translate(0, .02, -.005);
+      m.rotateX(.75);
+      drawModHand(hand, color);
+      m.save();
+      m.translate(0, 0, -.0095).scale(.004, .004, .003);
+      drawShape(CG.sphere, C.isDown() ? [10, 0, 0] : color);
+      m.restore();
+      m.save();
+      m.translate(0, 0, -.01).scale(.04, .04, .13);
+      drawShape(CG.torus1, color);
+      m.restore();
+      m.save();
+      m.translate(0, -.0135, -.008).scale(.04, .0235, .0015);
+      drawShape(CG.cylinder, color);
+      m.restore();
+      m.save();
+      m.translate(0, -.01, .03).scale(.012, .02, .037);
+      drawShape(CG.cylinder, color);
+      m.restore();
+      m.save();
+      m.translate(0, -.01, .067).scale(.012, .02, .023);
+      drawShape(CG.sphere, color);
+      m.restore();
       m.restore();
    }
 
-   let drawSyncController = (pos, rot, color, yAngle) => {
-		let P = pos;
-		m.save();
-			// m.identity();
-			m.translate(P[0], P[1], P[2]);
-			if (typeof yAngle !== 'undefined') {
-				m.rotateY(yAngle);
-			}
-			m.rotateQ(rot);
-			m.translate(0,.02,-.005);
-			m.rotateX(.75);
-			m.save();
-				m.translate(0,0,-.0095).scale(.004,.004,.003);
-			m.restore();
-			m.save();
-				m.translate(0,0,-.01).scale(.04,.04,.13);
-				drawShape(CG.torus1, color);
-			m.restore();
-			m.save();
-				m.translate(0,-.0135,-.008).scale(.04,.0235,.0015);
-				drawShape(CG.cylinder, color);
-			m.restore();
-			m.save();
-				m.translate(0,-.01,.03).scale(.012,.02,.037);
-				drawShape(CG.cylinder, color);
-			m.restore();
-			m.save();
-				m.translate(0,-.01,.067).scale(.012,.02,.023);
-				drawShape(CG.sphere, color);
-			m.restore();
-		m.restore();
-	}
+   let drawSyncController = (pos, rot, color, yAngle, isRight) => {
+      let P = pos;
+      m.save();
+      // m.identity();
+      m.translate(P[0], P[1], P[2]);
+      if (typeof yAngle !== 'undefined') {
+         m.rotateY(yAngle);
+      }
+      m.rotateQ(rot);
+      m.translate(0, .02, -.005);
+      m.rotateX(.75);
+      if (typeof isRight !== 'undefined') {
+         drawModHand(1-isRight, color);
+      }
+      m.save();
+      m.translate(0, 0, -.0095).scale(.004, .004, .003);
+      m.restore();
+      m.save();
+      m.translate(0, 0, -.01).scale(.04, .04, .13);
+      drawShape(CG.torus1, color);
+      m.restore();
+      m.save();
+      m.translate(0, -.0135, -.008).scale(.04, .0235, .0015);
+      drawShape(CG.cylinder, color);
+      m.restore();
+      m.save();
+      m.translate(0, -.01, .03).scale(.012, .02, .037);
+      drawShape(CG.cylinder, color);
+      m.restore();
+      m.save();
+      m.translate(0, -.01, .067).scale(.012, .02, .023);
+      drawShape(CG.sphere, color);
+      m.restore();
+      m.restore();
+   }
 
 	// Draw your real self
 	let drawSelfAvatar = (color) => {
@@ -1025,8 +1052,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 				let rpos = rcontroller.position.slice();
 				rpos[1] += EYE_HEIGHT;
 
-				drawSyncController(rpos, rcontroller.orientation, [1,0,0]);
-				drawSyncController(lpos, lcontroller.orientation, [0,1,1]);
+				drawSyncController(rpos, rcontroller.orientation, [1,0,0],undefined,1);
+				drawSyncController(lpos, lcontroller.orientation, [0,1,1],undefined,0);
 			}
 		}
 	}
@@ -1060,8 +1087,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 				m.restore();
 			m.restore();
 			m.save();
-				drawSyncController(nextRelativeRight, rcontroller.orientation, CURRENT_COLOR);
-				drawSyncController(nextRelativeLeft, lcontroller.orientation, CURRENT_COLOR);
+				drawSyncController(nextRelativeRight, rcontroller.orientation, CURRENT_COLOR,undefined,1);
+				drawSyncController(nextRelativeLeft, lcontroller.orientation, CURRENT_COLOR,undefined,0);
 			m.restore();
 		m.restore();
 	}
@@ -1113,8 +1140,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		let rightDisp = [xzRightDisp[0], rightDispNext[1], xzRightDisp[2]]; // add y displacement back in
 		let rightControllerPos = CG.add(headsetPos, rightDisp);
 
-		drawSyncController(rightControllerPos, rcontroller.orientation, CURRENT_COLOR, yAngleNext - yAngle);
-		drawSyncController(leftControllerPos, lcontroller.orientation, CURRENT_COLOR, yAngleNext - yAngle);
+		drawSyncController(rightControllerPos, rcontroller.orientation, CURRENT_COLOR, yAngleNext - yAngle,1);
+		drawSyncController(leftControllerPos, lcontroller.orientation, CURRENT_COLOR, yAngleNext - yAngle,0);
 	};
 	// Avatars with arm swapping
 	let drawAvatars = () => {
