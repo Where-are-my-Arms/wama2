@@ -70,7 +70,7 @@ let lathe = CG.createMeshVertices(10, 16, CG.uvToLathe,
 ////////////////////////////// SCENE SPECIFIC CODE
 const WOOD = 0,
    TILES = 1,
-   NOISY_BUMP = 2;
+   VR_Base_Color = 2;
 
 let noise = new ImprovedNoise();
 let m = new Matrix();
@@ -175,7 +175,7 @@ async function setup(state) {
    const images = await imgutil.loadImagesPromise([
       getPath("textures/wood.png"),
       getPath("textures/tiles.jpg"),
-      getPath("textures/noisy_bump.jpg")
+      getPath("textures/VR_Base_Color.png")
    ]);
 
    let libSources = await MREditor.loadAndRegisterShaderLibrariesForLiveEditing(gl, "libs", [
@@ -805,7 +805,13 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       }
       m.restore();
    }
-
+   let drawVRHeadset = () => {
+     m.save();
+     m.rotateY(Math.PI);
+     //m.scale(.1);
+     drawShape(MOD.VR_simple,[1,1,1],VR_Base_Color,1.,true);
+     m.restore();
+   }
    let drawTimer = (timer) => {
       m.save();
       m.translate(0, 3 / 4 * HALL_WIDTH, -0.9 * HALL_WIDTH / 2);
@@ -858,17 +864,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       m.translate(P[0], P[1], P[2]);
       m.rotateQ(orientation);
       m.scale(.1);
-      m.save();
-      m.scale(1, 1.5, 1);
-      drawShape(CG.sphere, [0, 0, 0]);
-      m.restore();
-      for (let s = -1; s <= 1; s += 2) {
-         m.save();
-         m.translate(s * .4, .2, -.8);
-         m.scale(.4, .4, .1);
-         drawShape(CG.sphere, [10, 10, 10]);
-         m.restore();
-      }
+      drawVRHeadset();
+      
       m.restore();
    }
 
@@ -916,7 +913,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       m.translate(0, .02, -.005);
       m.rotateX(.75);
       if (typeof isRight !== 'undefined') {
-         drawModHand(isRight, color);
+         drawModHand(1-isRight, color);
       }
       m.save();
       m.translate(0, 0, -.0095).scale(.004, .004, .003);
