@@ -11,13 +11,33 @@ const HALL_LENGTH      = inchesToMeters(306);
 
 const RING_RADIUS      = 0.0425;
 const TABLE_DEPTH      = inchesToMeters( 30);
-const TABLE_HEIGHT     = inchesToMeters( 29);
+const TABLE_HEIGHT     = inchesToMeters( 40);
 const TABLE_WIDTH      = inchesToMeters( 90);
 const TABLE_THICKNESS  = inchesToMeters( 11/8);
 const LEG_THICKNESS    = inchesToMeters(  2.5);
+let CENTREWIDTH = inchesToMeters(30) / 6;
+let PLAYAREALENGTH = ((TABLE_DEPTH / 2) - CENTREWIDTH) * 2;
 
+
+// PROPERTIES FOR A FAKE AVATAR
+let fakePlayerId = 1234;
+let fakeHeadset = {orientation:  {0: -0.2792164385318756, 1: -0.4014868140220642, 2: -0.160637766122818, 3: 0.8573458790779114},
+				position: [-0.2077968418598175, -0.043238624930381775, -0.10116904973983765, 1]};
+let fakeLeftController = {orientation: [-0.025360411033034325, -0.7055144906044006, -0.49319207668304443, 0.5082988142967224],
+							position: [-0.14827774465084076, -0.3243420422077179, -0.328858882188797, 1]};
+let fakeRightController = {orientation: [-0.01277919765561819, -0.2826057970523834, 0.25302281975746155, 0.925175666809082],
+							position: [-0.11401508748531342, -0.3915167450904846, -0.1218881756067276, 1]};
+let fakeAvatar = {mode: 1,
+					playerid: fakePlayerId,
+					headset: fakeHeadset,
+					leftController: fakeLeftController,
+					rightController: fakeRightController};
+let SWAPPING = true;
+let playTickTock = false;
 const RANDOM = 100;
 const FIXED = 101;
+const ROUNDTABLE = 103;
+const POSITIONMODE = ROUNDTABLE;
 let enableModeler = true;
 MR.gameState.LOAD_TIME = -1;
 const LOAD_DURATION = 1500;
@@ -31,14 +51,19 @@ let getUid = () => {
 	return uid;
 }
 
+
+
 const SCALE = 0.25;
-const HALL_WIDTH = 10 * SCALE;
+const HALL_WIDTH = inchesToMeters(120);;
 
 const BUTTON = "startButton";
 const BLOB = "blob";
 let BLOB_SIZE = .4 * SCALE;
+if (POSITIONMODE == ROUNDTABLE) {
+	BLOB_SIZE = BLOB_SIZE * 2 / 3;
+}
 let BLOB_LIFE = 10000;
-let BIRTH_OFFSET = 10000;
+let BIRTH_OFFSET = 1000;
 let BLOB_COUNT = 15;
 let BLOB_COLORS = [
   [1,0,0],
@@ -51,12 +76,16 @@ const END = "Game End";
 const LOAD = "Game load (fades).)";
 MR.gameState.MODE = START;
 
-let COLOR_TIME = 400;
+let COLOR_TIME = 5000;
+let timeAtLastColor = 0;
+
 let CURRENT_COLOR = BLOB_COLORS[0];
 /*Example Grabble Object*/
 let grabbableCube = new Obj(CG.torus);
 let bigButton = new BigButton([0,TABLE_HEIGHT - EYE_HEIGHT,0], 0.1, [1,0,0]);
 let blobs = [];
+let timeAtLastBlobRequest = [];
+let timeAtLastObjRequest = [];
 // set the blobs up for the first time
 for(let i=0;i<BLOB_COUNT; i++) {
 	let blob = new Blob();
@@ -80,11 +109,247 @@ function HeadsetHandler(headset) {
    this.position    = () => headset.pose.position;
 }
 
+// Doesn't draw anything, returns the position and orientation(matrix form) of the controllers drawn for avatar
+function drawRightSwappedAvatarAltDry (avatar, nextAvatar) {
+	let headsetPos = avatar.headset.position;
+	let headsetRot = avatar.headset.orientation;
+	let headsetPosNext = nextAvatar.headset.position; // Also check if these are null, right?
+	let headsetRotNext = nextAvatar.headset.orientation;
+	let rcontroller = avatar.rightController;
+	let lcontroller = avatar.leftController;
+	if(headsetPos == null || headsetRot == null)
+		return;
+	if (typeof headsetPos == 'undefined') {
+		console.log(id);
+		console.log("not defined");
+	}
+
+	// get the y rotation angles
+	//let yAngle = CG.yAngleFromQuaternion(headsetRot);
+	//let yAngleNext = CG.yAngleFromQuaternion(headsetRotNext);
+	//TODO: apply yAngleNext - yAngle to controllers.
+
+	let vector = CG.vectorFromQuaternion(headsetRot); // direction head is pointing in
+	vector = CG.normalize(vector); 
+	let yAngle = Math.atan2(-vector[0], -vector[2]);
+	//let yzback = CG.matrixTransform(CG.matrixRotateY(-yAngle), vector);
+	//let pitch = Math.atan2(-yzback[2],-yzback[1]);
+
+	let vectorNext = CG.vectorFromQuaternion(headsetRotNext); // direction head is pointing in
+	vectorNext = CG.normalize(vectorNext);
+	let yAngleNext = Math.atan2(-vectorNext[0], -vectorNext[2]);
+	//yzback = CG.matrixTransform(CG.matrixRotateY(-yAngleNext), vectorNext);
+	//let pitchNext = Math.atan2(-yzback[2],-yzback[1]);
+	//let altXAngle = Math.atan2(-altVectorNext[2], -altVectorNext[1]);
+	//altVectorNext = CG.scale(altVectorNext, 0.2);
+
+	// VISUAL DEBUG
+	//m.save();
+		//m.translate(headsetPosNext[0], headsetPosNext[1], headsetPosNext[2]);
+		//m.rotateY(yAngleNext);
+		//m.rotateX(pitch);
+		//m.rotateY(-yAngleNext);
+		//m.rotateY(yAngleNext);
+		//m.translate(0,-1,0);
+		//m.translate(altVectorNext[0], 0, altVectorNext[2]);
+		//m.scale(0.1,0.1,0.1);
+	//	drawShape(CG.sphere, [1,1,1]);
+	//m.restore();
+	// VISUAL DEBUG
+
+	//let yAngleVector = [-Math.sin(yAngle), 0, -Math.cos(yAngle)]; // turn the angle into vector in the x-z plane
+	let yAngleVector = [vector[0], 0, vector[2]];
+	yAngleVector = CG.normalize(yAngleVector);
+	let yAngleVectorNormal = [yAngleVector[2], 0, -yAngleVector[0]];
+	yAngleVectorNormal = CG.normalize(yAngleVectorNormal);
+
+
+	//let yAngleNextVector = [-Math.sin(yAngleNext), 0, -Math.cos(yAngleNext)];
+	let yAngleNextVector = [vectorNext[0], 0, vectorNext[2]];
+	yAngleNextVector = CG.normalize(yAngleNextVector);
+	let yAngleNextVectorNormal = [yAngleNextVector[2], 0, -yAngleNextVector[0]];
+	yAngleNextVectorNormal = CG.normalize(yAngleNextVectorNormal);
+
+
+	let rControllerNext = nextAvatar.rightController;
+	let rightDispNext = CG.subtract(rControllerNext.position, headsetPosNext); // displacement of next's rightcontroller from its headset.
+	let xzRightDispNext = [rightDispNext[0], 0, rightDispNext[2]];
+	let iRight = CG.dot(xzRightDispNext, yAngleNextVector); // scalar projection of xzRightDispNext onto yAngleNextVector 
+	let jRight = CG.dot(xzRightDispNext, yAngleNextVectorNormal);
+	let xzRightDisp = CG.add(CG.scale(yAngleVector, iRight), CG.scale(yAngleVectorNormal, jRight));
+	let rightDisp = [xzRightDisp[0], rightDispNext[1], xzRightDisp[2]]; // add y displacement back in
+	let rightControllerPos = CG.add(headsetPos, rightDisp);
+
+	m.save();
+		m.identity();
+		m.rotateY(yAngle - yAngleNext);
+		m.rotateQ(rControllerNext.orientation);
+		let ori = m.value();
+	m.restore();
+	let res = {position: rightControllerPos, orientation: ori};
+	return res;
+	//drawSyncController(rightControllerPos, rControllerNext.orientation, CURRENT_COLOR, yAngle - yAngleNext);
+};
+
+function drawLeftSwappedAvatarAltDry (avatar, nextAvatar) {
+	let headsetPos = avatar.headset.position;
+	let headsetRot = avatar.headset.orientation;
+	let headsetPosNext = nextAvatar.headset.position; // Also check if these are null, right?
+	let headsetRotNext = nextAvatar.headset.orientation;
+	let rcontroller = avatar.rightController;
+	let lcontroller = avatar.leftController;
+	if(headsetPos == null || headsetRot == null)
+		return;
+	if (typeof headsetPos == 'undefined') {
+		console.log(id);
+		console.log("not defined");
+	}
+
+	// get the y rotation angles
+	//let yAngle = CG.yAngleFromQuaternion(headsetRot);
+	//let yAngleNext = CG.yAngleFromQuaternion(headsetRotNext);
+	//TODO: apply yAngleNext - yAngle to controllers.
+
+	let vector = CG.vectorFromQuaternion(headsetRot); // direction head is pointing in
+	vector = CG.normalize(vector); 
+	let yAngle = Math.atan2(-vector[0], -vector[2]);
+	//let yzback = CG.matrixTransform(CG.matrixRotateY(-yAngle), vector);
+	//let pitch = Math.atan2(-yzback[2],-yzback[1]);
+
+	let vectorNext = CG.vectorFromQuaternion(headsetRotNext); // direction head is pointing in
+	vectorNext = CG.normalize(vectorNext);
+	let yAngleNext = Math.atan2(-vectorNext[0], -vectorNext[2]);
+	//yzback = CG.matrixTransform(CG.matrixRotateY(-yAngleNext), vectorNext);
+	//let pitchNext = Math.atan2(-yzback[2],-yzback[1]);
+	//let altXAngle = Math.atan2(-altVectorNext[2], -altVectorNext[1]);
+	//altVectorNext = CG.scale(altVectorNext, 0.2);
+
+	// VISUAL DEBUG
+	//m.save();
+		//m.translate(headsetPosNext[0], headsetPosNext[1], headsetPosNext[2]);
+		//m.rotateY(yAngleNext);
+		//m.rotateX(pitch);
+		//m.rotateY(-yAngleNext);
+		//m.rotateY(yAngleNext);
+		//m.translate(0,-1,0);
+		//m.translate(altVectorNext[0], 0, altVectorNext[2]);
+		//m.scale(0.1,0.1,0.1);
+	//	drawShape(CG.sphere, [1,1,1]);
+	//m.restore();
+	// VISUAL DEBUG
+
+	//let yAngleVector = [-Math.sin(yAngle), 0, -Math.cos(yAngle)]; // turn the angle into vector in the x-z plane
+	let yAngleVector = [vector[0], 0, vector[2]];
+	yAngleVector = CG.normalize(yAngleVector);
+	let yAngleVectorNormal = [yAngleVector[2], 0, -yAngleVector[0]];
+	yAngleVectorNormal = CG.normalize(yAngleVectorNormal);
+
+
+	//let yAngleNextVector = [-Math.sin(yAngleNext), 0, -Math.cos(yAngleNext)];
+	let yAngleNextVector = [vectorNext[0], 0, vectorNext[2]];
+	yAngleNextVector = CG.normalize(yAngleNextVector);
+	let yAngleNextVectorNormal = [yAngleNextVector[2], 0, -yAngleNextVector[0]];
+	yAngleNextVectorNormal = CG.normalize(yAngleNextVectorNormal);
+
+	let lControllerNext = nextAvatar.leftController;
+	let leftDispNext = CG.subtract(lControllerNext.position, headsetPosNext); // displacement of next's leftcontroller from its headset.
+	let xzLeftDispNext = [leftDispNext[0], 0, leftDispNext[2]];
+	let iLeft = CG.dot(xzLeftDispNext, yAngleNextVector); // scalar projection of xzLeftDispNext onto yAngleNextVector 
+	let jLeft = CG.dot(xzLeftDispNext, yAngleNextVectorNormal);
+	let xzLeftDisp = CG.add(CG.scale(yAngleVector, iLeft), CG.scale(yAngleVectorNormal, jLeft));
+	let leftDisp = [xzLeftDisp[0], leftDispNext[1], xzLeftDisp[2]]; // add y displacement back in 
+	//let tempyAngle = Math.atan2(-leftDisp[0], -leftDisp[2]);
+	//yzback = CG.matrixTransform(CG.matrixRotateY(-tempyAngle), leftDisp);
+	//let yzbackxrotate = CG.matrixTransform(CG.matrixRotateX(pitch - pitchNext), yzback);
+	//leftDisp = CG.matrixTransform(CG.matrixRotateY(tempyAngle), yzbackxrotate);
+	let leftControllerPos = CG.add(headsetPos, leftDisp);
+
+	m.save();
+		m.identity();
+		m.rotateY(yAngle - yAngleNext);
+		m.rotateQ(lControllerNext.orientation);
+		let ori = m.value();
+	m.restore();
+	let res = {position: leftControllerPos, orientation: ori};
+	return res;
+	//drawSyncController(leftControllerPos, lControllerNext.orientation, CURRENT_COLOR, yAngle - yAngleNext);
+};
+
+
 function ControllerHandler(controller) {
+	this.id = () => controller.index; // 0 for right, 1 for left
    this.isDown      = () => controller.buttons[1].pressed;
    this.onEndFrame  = () => wasDown = this.isDown();
-   this.orientation = () => controller.pose.orientation;
-   this.position    = () => controller.pose.position;
+   this.orientation = (real) => {
+		if (MR.gameState.MODE != PLAY || (MR.gameState.MODE == PLAY && !SWAPPING) || (typeof real !== 'undefined' && real)) {
+			return CG.matrixFromQuaternion(controller.pose.orientation);
+		} else {
+			// find the Avatar who has your controllers
+			let allAvatarIds = Object.keys( MR.avatars);
+			allAvatarIds.sort();
+			let avatarIds = [];
+			for (let i = 0; i < allAvatarIds.length; i++) {
+				let id = allAvatarIds[i];
+				let avt = MR.avatars[id];
+				if (avt.mode == MR.UserType.vr) {
+					avatarIds.push(id);		
+				}
+			}
+			let avt, prevAvt;
+			for (let i = 0; i < avatarIds.length; i++) {
+				let id = avatarIds[i];
+				let nextId = avatarIds[ (i+1) % avatarIds.length ];
+				if (nextId == MR.playerid) {
+					avt = MR.avatars[nextId];
+					prevAvt = MR.avatars[id];
+					break;
+				}
+			}
+			//prevAvt = fakeAvatar;// comment this out
+			if (this.id() == 1) {
+				let pos_ori = drawLeftSwappedAvatarAltDry (prevAvt, avt);
+				return pos_ori.orientation;
+			} else {
+				let pos_ori = drawRightSwappedAvatarAltDry (prevAvt, avt);
+				return pos_ori.orientation;
+			}
+		}
+	}
+   this.position    = (real) =>  {
+		if (MR.gameState.MODE != PLAY || (MR.gameState.MODE == PLAY && !SWAPPING) || (typeof real !== 'undefined' && real)) {
+			return controller.pose.position; 
+		} else {
+			// find the Avatar who has your controllers
+			let allAvatarIds = Object.keys( MR.avatars);
+			allAvatarIds.sort();
+			let avatarIds = [];
+			for (let i = 0; i < allAvatarIds.length; i++) {
+				let id = allAvatarIds[i];
+				let avt = MR.avatars[id];
+				if (avt.mode == MR.UserType.vr) {
+					avatarIds.push(id);		
+				}
+			}
+			let avt, prevAvt;
+			for (let i = 0; i < avatarIds.length; i++) {
+				let id = avatarIds[i];
+				let nextId = avatarIds[ (i+1) % avatarIds.length ];
+				if (nextId == MR.playerid) {
+					avt = MR.avatars[nextId];
+					prevAvt = MR.avatars[id];
+					break;
+				}
+			}
+			//prevAvt = fakeAvatar;
+			if (this.id() == 1) {
+				let pos_ori = drawLeftSwappedAvatarAltDry (prevAvt, avt);
+				return pos_ori.position;
+			} else {
+				let pos_ori = drawRightSwappedAvatarAltDry (prevAvt, avt);
+				return pos_ori.position;
+			}
+		}
+	}
    this.press       = () => ! wasDown && this.isDown();
    this.release     = () => wasDown && ! this.isDown();
    this.tip         = () => {
@@ -92,7 +357,7 @@ function ControllerHandler(controller) {
       m.save();
       m.identity();                     // THE "HOT SPOT" OF THE
       m.translate(P[0],P[1],P[2]);      // CONTROLLER TOWARD ITS
-      m.rotateQ(this.orientation());    // FAR TIP (FURTHER AWAY
+      m.multiply(this.orientation());    // FAR TIP (FURTHER AWAY
       m.translate(0,0,-.03);            // FROM THE USER'S HAND).
       let v = m.value();
       m.restore();
@@ -100,11 +365,13 @@ function ControllerHandler(controller) {
    }
    this.center = () => {
       let P = this.position();
+		m.save();
       m.identity();
       m.translate(P[0],P[1],P[2]);
-      m.rotateQ(this.orientation());
+      m.multiply(this.orientation());
       m.translate(0,.02,-.005);
       let v = m.value();
+		m.restore();
       return [v[12],v[13],v[14]];
    }
    let wasDown = false;
@@ -304,9 +571,12 @@ async function setup(state) {
    ]);
 
    this.audioContext2 = new SpatialAudioContext([
-   'assets/audio/peacock.wav'
+   'assets/audio/pop.wav'
    ]);
 
+   this.audioContext3 = new SpatialAudioContext([
+   'assets/audio/ticktock.wav'
+   ]);
 
    /************************************************************************
 
@@ -318,10 +588,12 @@ async function setup(state) {
    ************************************************************************/
 	// spawn start button
 	MR.objs.push(bigButton);
+	timeAtLastObjRequest.push(0);
    	sendSpawnMessage(bigButton);
 
 	for (let i = 0; i < BLOB_COUNT; i++) {
 		MR.blobs.push(blobs[i]);
+		timeAtLastBlobRequest.push(0);
 		sendSpawnMessage(blobs[i]);
 	}
 
@@ -344,7 +616,7 @@ let soundPosition = [];
 let timer;
 
 function updateColor() {
-  CURRENT_COLOR = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)]
+  CURRENT_COLOR = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
 }
 
 function BigButton(position, size, color) {
@@ -385,7 +657,7 @@ function Blob() {
 	this.death = -1;
 	this.wasTouched = false;
 	this.revived = false;
-	this.mode = FIXED;
+	this.mode = POSITIONMODE;
 	this.lock = new Lock();
 	this.uid = getUid();
 	this.getState = () => {
@@ -418,6 +690,7 @@ function Blob() {
 		}
 		return pos
 	};
+
 	let fixedPositions = (nx, ny, nz) => {
 		// nx, ny, nz are the number of blobs you want in each direction
 		let pos;
@@ -443,6 +716,21 @@ function Blob() {
 		return pos;	
 	};
 
+	let roundTable = (nx, ny) => {
+		let x = nx;
+		let y = ny + 1;
+
+		let dx = 2 * Math.PI / x;
+		let dy = PLAYAREALENGTH / y;
+		
+		let i = Math.floor(Math.random() * nx);
+		let j = Math.floor(Math.random() * ny) + 1;
+
+		let vec = [CENTREWIDTH + (j * dy), TABLE_HEIGHT - EYE_HEIGHT, 0];
+		vec = CG.matrixTransform(CG.matrixRotateY(i * dx), vec);
+		return vec;
+	}
+
 	let setPosition = () => {
     // TODO: ensure that nothing on the ceiling, and on floor?
     // TODO: ensure things are in reach
@@ -452,6 +740,9 @@ function Blob() {
 				break;
 			case FIXED:
 				this.position = fixedPositions(12, 12, 12);
+				break;
+			case ROUNDTABLE:
+				this.position = roundTable(10, 2);
 				break;
 			default:
 				this.position = fixedPositions(3, 3, 3);
@@ -480,11 +771,10 @@ function Blob() {
 		if (this.birth == -1) {
 			this.birth = MR.tick + Math.floor(Math.random() * BIRTH_OFFSET/2) + 1;
 		}else {
-			this.birth = MR.tick + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
+			this.birth = MR.tick + Math.floor(Math.random() * BIRTH_OFFSET/2) + 1;
 		}
 		this.death = this.birth + BLOB_LIFE;
 		this.wasTouched = false;
-		this.mode = FIXED;
 		// position = [0, HALL_WIDTH/2, 0];
 		setPosition();
 		setColor();
@@ -553,6 +843,12 @@ function onStartFrame(t, state) {
    -----------------------------------------------------------------*/
    const input  = state.input;
    const editor = state.editor;
+
+	if(!state.frame) {
+     state.frame = 1;
+   } else {
+     state.frame = state.frame+1;
+   }
 
    if (! state.avatarMatrixForward) {
       // MR.avatarMatrixForward is because i need accesss to this in callback.js, temp hack
@@ -663,8 +959,8 @@ function onStartFrame(t, state) {
 	if (MR.gameState.MODE == START) { 
 		if (input.LC && !bigButton.wasTouched && bigButton.isTouched(input)) { // don't allow game to start until there are 3 avatars in the scene
 			// more reaction to being touched? e.g. button lights up
-			console.log("Big button touched.");
 			if (bigButton.lock.locked) {
+			console.log("Big button touched.");
 				MR.gameState.MODE = LOAD;
 				MR.gameState.LOAD_TIME = MR.tick;
 				bigButton.wasTouched = true;
@@ -691,7 +987,10 @@ function onStartFrame(t, state) {
 				}
 				MR.syncClient.send(response);
 			} else {
-				bigButton.lock.request(bigButton.uid);
+				if (state.frame > timeAtLastObjRequest[0] + 20) {
+					timeAtLastObjRequest[0] = state.frame;
+					bigButton.lock.request(bigButton.uid);
+				}
 			}
 		}
 	} else if (MR.gameState.MODE == LOAD) {
@@ -699,6 +998,7 @@ function onStartFrame(t, state) {
 			if (MR.tick >= MR.gameState.LOAD_TIME + LOAD_DURATION) {
 				timer = new Timer(PLAY_DURATION);
 				timer.start();
+				playTickTock = true;
 				MR.gameState.MODE = PLAY;
 				ROOM_COLOR = PLAY_COLOR;
 			}	
@@ -720,7 +1020,10 @@ function onStartFrame(t, state) {
 					b.setRevived();
 					sendUpdateObjectMessage(b);
 				} else {
-					b.lock.request(b.uid);
+					if (state.frame > timeAtLastBlobRequest[i] + 20) {
+						timeAtLastBlobRequest[i] = state.frame;
+						b.lock.request(b.uid);
+					}
 				}
 			} else {
 				if(input.LC && b.isAlive() && !b.wastouched() && b.isTouched(input) && b.isValid()) {
@@ -733,14 +1036,18 @@ function onStartFrame(t, state) {
 						b.makeTouched();
 						sendUpdateObjectMessage(b);
 					} else {
-						b.lock.request(b.uid);
+						if (state.frame > timeAtLastBlobRequest[i] + 20) {
+							timeAtLastBlobRequest[i] = state.frame;
+							b.lock.request(b.uid);
+						}
 					}
 				} 
 			}
 		}
 	}
 
-   if(state.frame % COLOR_TIME == 0) {
+   if(MR.tick >  timeAtLastColor + COLOR_TIME) {
+	timeAtLastColor = MR.tick;
      updateColor();
    }
     /*-----------------------------------------------------------------
@@ -811,16 +1118,17 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		m.save();
 			m.multiply(state.avatarMatrixForward);
 			m.translate(x,y,0);
+			// silver ring
 			m.save();
 				m.translate(0, TABLE_HEIGHT + TABLE_THICKNESS / 4, 0);
 				m.rotateX(Math.PI / 2);
-				m.scale(TABLE_DEPTH/6, TABLE_DEPTH / 6, TABLE_THICKNESS / 4);
+				m.scale(CENTREWIDTH, CENTREWIDTH, TABLE_THICKNESS / 4);
 				drawShape(CG.cylinder, [0.1,0.1,0.1]);
 			m.restore();
 			m.save();
 				m.translate(0, TABLE_HEIGHT - TABLE_THICKNESS / 2, 0);
 				m.rotateX(Math.PI / 2);
-				m.scale(TABLE_DEPTH/2, TABLE_DEPTH / 2, TABLE_THICKNESS / 2);
+				m.scale(CENTREWIDTH + PLAYAREALENGTH, CENTREWIDTH + PLAYAREALENGTH, TABLE_THICKNESS / 2);
 				drawShape(CG.cylinder, [0.,0.,0.]);
 			m.restore();
 			m.save();
@@ -857,11 +1165,11 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
    }
 
    let drawController = (C, hand, color) => {
-      let P = C.position();
+      let P = C.position(true);
       m.save();
          m.multiply(state.avatarMatrixForward);
          m.translate(P[0],P[1],P[2]);
-         m.rotateQ(C.orientation());
+         m.multiply(C.orientation(true));
          m.translate(0,.02,-.005);
          m.rotateX(.75);
          m.save();
@@ -939,6 +1247,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 	let drawNormalAvatars = () => {
 		for (let id in MR.avatars) {
 			const avatar = MR.avatars[id];
+			//const avatar = fakeAvatar; // comment out
+			
 
 			if (avatar.mode == MR.UserType.vr) {
 				if (MR.playerid == avatar.playerid)
@@ -967,7 +1277,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 				let rpos = rcontroller.position.slice();
 				rpos[1] += EYE_HEIGHT;
 
-				drawSyncController(rpos, rcontroller.orientation, [1,0,0]);
+				drawSyncController(rpos, rcontroller.orientation, [1,0,1]);
 				drawSyncController(lpos, lcontroller.orientation, [0,1,1]);
 			}
 		}
@@ -1023,16 +1333,47 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		}
 
 		// get the y rotation angles
-		let yAngle = CG.yAngleFromQuaternion(headsetRot);
-		let yAngleNext = CG.yAngleFromQuaternion(headsetRotNext);
+		//let yAngle = CG.yAngleFromQuaternion(headsetRot);
+		//let yAngleNext = CG.yAngleFromQuaternion(headsetRotNext);
 		//TODO: apply yAngleNext - yAngle to controllers.
 
-		let yAngleVector = [-Math.sin(yAngle), 0, -Math.cos(yAngle)]; // turn the angle into vector in the x-z plane
+		let vector = CG.vectorFromQuaternion(headsetRot); // direction head is pointing in
+		vector = CG.normalize(vector); 
+		let yAngle = Math.atan2(-vector[0], -vector[2]);
+		//let yzback = CG.matrixTransform(CG.matrixRotateY(-yAngle), vector);
+		//let pitch = Math.atan2(-yzback[2],-yzback[1]);
+
+		let vectorNext = CG.vectorFromQuaternion(headsetRotNext); // direction head is pointing in
+		vectorNext = CG.normalize(vectorNext);
+		let yAngleNext = Math.atan2(-vectorNext[0], -vectorNext[2]);
+		//yzback = CG.matrixTransform(CG.matrixRotateY(-yAngleNext), vectorNext);
+		//let pitchNext = Math.atan2(-yzback[2],-yzback[1]);
+		//let altXAngle = Math.atan2(-altVectorNext[2], -altVectorNext[1]);
+		//altVectorNext = CG.scale(altVectorNext, 0.2);
+
+		// VISUAL DEBUG
+		//m.save();
+			//m.translate(headsetPosNext[0], headsetPosNext[1], headsetPosNext[2]);
+			//m.rotateY(yAngleNext);
+			//m.rotateX(pitch);
+			//m.rotateY(-yAngleNext);
+			//m.rotateY(yAngleNext);
+			//m.translate(0,-1,0);
+			//m.translate(altVectorNext[0], 0, altVectorNext[2]);
+			//m.scale(0.1,0.1,0.1);
+		//	drawShape(CG.sphere, [1,1,1]);
+		//m.restore();
+		// VISUAL DEBUG
+
+		//let yAngleVector = [-Math.sin(yAngle), 0, -Math.cos(yAngle)]; // turn the angle into vector in the x-z plane
+		let yAngleVector = [vector[0], 0, vector[2]];
 		yAngleVector = CG.normalize(yAngleVector);
 		let yAngleVectorNormal = [yAngleVector[2], 0, -yAngleVector[0]];
 		yAngleVectorNormal = CG.normalize(yAngleVectorNormal);
 
-		let yAngleNextVector = [-Math.sin(yAngleNext), 0, -Math.cos(yAngleNext)];
+
+		//let yAngleNextVector = [-Math.sin(yAngleNext), 0, -Math.cos(yAngleNext)];
+		let yAngleNextVector = [vectorNext[0], 0, vectorNext[2]];
 		yAngleNextVector = CG.normalize(yAngleNextVector);
 		let yAngleNextVectorNormal = [yAngleNextVector[2], 0, -yAngleNextVector[0]];
 		yAngleNextVectorNormal = CG.normalize(yAngleNextVectorNormal);
@@ -1044,6 +1385,10 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		let jLeft = CG.dot(xzLeftDispNext, yAngleNextVectorNormal);
 		let xzLeftDisp = CG.add(CG.scale(yAngleVector, iLeft), CG.scale(yAngleVectorNormal, jLeft));
 		let leftDisp = [xzLeftDisp[0], leftDispNext[1], xzLeftDisp[2]]; // add y displacement back in 
+		//let tempyAngle = Math.atan2(-leftDisp[0], -leftDisp[2]);
+		//yzback = CG.matrixTransform(CG.matrixRotateY(-tempyAngle), leftDisp);
+		//let yzbackxrotate = CG.matrixTransform(CG.matrixRotateX(pitch - pitchNext), yzback);
+		//leftDisp = CG.matrixTransform(CG.matrixRotateY(tempyAngle), yzbackxrotate);
 		let leftControllerPos = CG.add(headsetPos, leftDisp);
 
 		let rControllerNext = nextAvatar.rightController;
@@ -1055,22 +1400,46 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		let rightDisp = [xzRightDisp[0], rightDispNext[1], xzRightDisp[2]]; // add y displacement back in
 		let rightControllerPos = CG.add(headsetPos, rightDisp);
 
-		drawSyncController(rightControllerPos, rcontroller.orientation, CURRENT_COLOR, yAngleNext - yAngle);
-		drawSyncController(leftControllerPos, lcontroller.orientation, CURRENT_COLOR, yAngleNext - yAngle);
+		m.save();
+			m.translate(headsetPos[0], headsetPos[1], headsetPos[2]);
+			m.rotateQ(headsetRot);
+			m.save();
+				m.scale(0.1,0.1,0.1);
+				m.save();
+					drawShape(CG.cylinder, [0.2,0.2,0.4]);
+				m.restore();
+			m.restore();
+		m.restore();
+		drawSyncController(rightControllerPos, rControllerNext.orientation, CURRENT_COLOR, yAngle - yAngleNext);
+		drawSyncController(leftControllerPos, lControllerNext.orientation, CURRENT_COLOR, yAngle - yAngleNext);
 	};
 	// Avatars with arm swapping
 	let drawAvatars = () => {
-		let avatarIds = Object.keys( MR.avatars);
-		avatarIds.sort();
+		let allAvatarIds = Object.keys( MR.avatars);
+		allAvatarIds.sort();
+		let avatarIds = [];
+		for (let i = 0; i < allAvatarIds.length; i++) {
+			let id = allAvatarIds[i];
+			let avt = MR.avatars[id];
+			if (avt.mode == MR.UserType.vr) {
+				avatarIds.push(id);		
+			}
+		}
 
 		let cc = 0;
 
+		// TODO: EXCLUDE COMPUTER FROM AVATARIDS
 		for (let i=0; i<avatarIds.length; i++) {
 			let id = avatarIds[i];
 			let nextId = avatarIds[ (i+1) % avatarIds.length ];
 			let avatar = MR.avatars[id];
 			let nextAvatar = MR.avatars[nextId];
-			// console.log("ID " + id + " NEXTID " + nextId);
+			/*// console.log("ID " + id + " NEXTID " + nextId);
+			if (avatar.mode == MR.UserType.vr) {
+				drawSwappedAvatarAlt(avatar, fakeAvatar); // comment out
+				drawSwappedAvatarAlt(fakeAvatar, avatar); // comment out
+				break; // comment out
+			}*/
 
 			if (avatar.mode == MR.UserType.vr && nextAvatar.mode == MR.UserType.vr) {
 				drawSwappedAvatarAlt(avatar, nextAvatar);
@@ -1080,7 +1449,9 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		}
 	}
 
-	drawSelfAvatar(CURRENT_COLOR);
+	if (MR.gameState.MODE != PLAY || (MR.gameState.MODE == PLAY && !SWAPPING)) { 
+		drawSelfAvatar(CURRENT_COLOR);
+	}
 	//drawSelfAvatar([1,1,1]); // drawing real self for debugging here.
 
 
@@ -1150,10 +1521,16 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		}
 	}
 
-	//drawAvatars(); // avatars with arm swapping
-
+	if (MR.gameState.MODE == PLAY) {
+		drawTimer(timer);
+	}
+	if (MR.gameState.MODE == PLAY && SWAPPING) {
+		drawAvatars(); // avatars with arm swapping
+		drawTimer(timer);
+	}
+	m.save();
 	m.translate(0, -EYE_HEIGHT, 0);
-	if (MR.gameState.MODE == START) {
+	if (MR.gameState.MODE == START || (MR.gameState.MODE == PLAY && POSITIONMODE == ROUNDTABLE)) {
 		drawTable(0,0);
 	}
 	if (MR.gameState.MODE == PLAY) {
@@ -1165,11 +1542,16 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		drawShape(CG.cube, ROOM_COLOR);
 	m.restore();
 
-	drawNormalAvatars();
+	if (MR.gameState.MODE != PLAY || (MR.gameState.MODE == PLAY && !SWAPPING)) {
+		drawNormalAvatars();
+	}
+	m.restore();
 }
 
 function onEndFrame(t, state) {
-  // console.log("ONENDFRAME, PLAYSOUND " + playSound);
+	if (playSound) {
+  console.log("ONENDFRAME, PLAYSOUND " + playSound);
+	}
    pollAvatarData();
    const input  = state.input;
    if (input.HS != null) {
@@ -1178,8 +1560,16 @@ function onEndFrame(t, state) {
      if(playSound) {
        playSound = false;
        console.log("PLAY SOUNDS");
-       this.audioContext2.playFileAt('assets/audio/peacock.wav', [0,0,0]);
+       this.audioContext2.playFileAt('assets/audio/pop.wav', /*input.RC.position()*/[0,0,0]);
      }
+
+		if (playTickTock) {
+			playTickTock = false;
+       		this.audioContext3.playFileAt('assets/audio/ticktock.wav', /*input.RC.position()*/[0,-EYE_HEIGHT/2,0]);
+		}
+		if (MR.gameState.MODE != PLAY) {
+       		//this.audioContext3.stop('assets/audio/ticktock.wav');
+		}
     }
    if (input.LC) input.LC.onEndFrame();
    if (input.RC) input.RC.onEndFrame();
@@ -1245,39 +1635,6 @@ function calcBoundingBox(verts) {
    }
 
    return [min, max];
-}
-
-function pollGrab(state) {
-   let input = state.input;
-   if ((input.LC && input.LC.isDown()) || (input.RC && input.RC.isDown())) {
-
-      let controller = input.LC.isDown() ? input.LC : input.RC;
-      for (let i = 0; i < MR.objs.length; i++) {
-         //ALEX: Check if grabbable.
-         let isGrabbed = checkIntersection(controller.position(), MR.objs[i].shape);
-         //requestLock(MR.objs[i].uid);
-         if (isGrabbed == true) {
-            if (MR.objs[i].lock.locked) {
-               MR.objs[i].position = controller.position();
-               const response =
-               {
-                  type: "object",
-                  uid: MR.objs[i].uid,
-                  state: {
-                     position: MR.objs[i].position,
-                     orientation: MR.objs[i].orientation,
-                  },
-                  lockid: MR.playerid,
-
-               };
-
-               MR.syncClient.send(response);
-            } else {
-               MR.objs[i].lock.request(MR.objs[i].uid);
-            }
-         }
-      }
-   }
 }
 
 function releaseLocks(state) {
