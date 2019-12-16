@@ -923,17 +923,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
          m.translate(P[0],P[1],P[2]);
          m.rotateQ(orientation);
          m.scale(.1);
-         m.save();
-            m.scale(1,1.5,1);
-            drawShape(CG.sphere, [0,0,0]);
-         m.restore();
-         for (let s = -1 ; s <= 1 ; s += 2) {
-            m.save();
-               m.translate(s*.4,.2,-.8);
-               m.scale(.4,.4,.1);
-               drawShape(CG.sphere, [10,10,10]);
-            m.restore();
-         }
+         drawVRHeadset();
       m.restore();
    }
 
@@ -945,7 +935,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       m.rotateQ(C.orientation());
       m.translate(0, .02, -.005);
       m.rotateX(.75);
-      drawModHand(hand, color);
+      drawModHand(hand, [0,1,1]);
       m.save();
       m.translate(0, 0, -.0095).scale(.004, .004, .003);
       drawShape(CG.sphere, C.isDown() ? [10, 0, 0] : color);
@@ -981,7 +971,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       m.translate(0, .02, -.005);
       m.rotateX(.75);
       if (typeof isRight !== 'undefined') {
-         drawModHand(1-isRight, color);
+         drawModHand(isRight, color);
       }
       m.save();
       m.translate(0, 0, -.0095).scale(.004, .004, .003);
@@ -1052,7 +1042,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 				let rpos = rcontroller.position.slice();
 				rpos[1] += EYE_HEIGHT;
 
-				drawSyncController(rpos, rcontroller.orientation, [1,0,0],undefined,1);
+				drawSyncController(rpos, rcontroller.orientation, [1,1,0],undefined,1);
 				drawSyncController(lpos, lcontroller.orientation, [0,1,1],undefined,0);
 			}
 		}
