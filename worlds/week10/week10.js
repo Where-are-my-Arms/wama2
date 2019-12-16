@@ -19,27 +19,58 @@ const LEG_THICKNESS    = inchesToMeters(  2.5);
 const RANDOM = 100;
 const FIXED = 101;
 let enableModeler = true;
-let LOAD_TIME = -1;
+MR.gameState.LOAD_TIME = -1;
 const LOAD_DURATION = 1500;
 let PLAY_COLOR = [1,1,1];	
 let START_COLOR = [0.1,0.1,0.1];
 let ROOM_COLOR = START_COLOR;
 const PLAY_DURATION = 30000; // play time in milliseconds
+let uid = -1;
+let getUid = () => {
+	uid += 1;
+	return uid;
+}
 
+const SCALE = 0.25;
+const HALL_WIDTH = 10 * SCALE;
+
+const BUTTON = "startButton";
+const BLOB = "blob";
+let BLOB_SIZE = .4 * SCALE;
+let BLOB_LIFE = 10000;
+let BIRTH_OFFSET = 10000;
+let BLOB_COUNT = 15;
+let BLOB_COLORS = [
+  [1,0,0],
+  [0,1,0],
+  [0,0,1]
+]
+const START = "Game Start";
+const PLAY = "Playing";
+const END = "Game End";
+const LOAD = "Game load (fades).)";
+MR.gameState.MODE = START;
+
+let COLOR_TIME = 400;
+let CURRENT_COLOR = BLOB_COLORS[0];
 /*Example Grabble Object*/
 let grabbableCube = new Obj(CG.torus);
+let bigButton = new BigButton([0,TABLE_HEIGHT - EYE_HEIGHT,0], 0.1, [1,0,0]);
+let blobs = [];
+// set the blobs up for the first time
+for(let i=0;i<BLOB_COUNT; i++) {
+	let blob = new Blob();
+	blobs.push(blob);
+}
 
 let lathe = CG.createMeshVertices(10, 16, CG.uvToLathe,
              [ CG.bezierToCubic([-1.0,-1.0,-0.7,-0.3,-0.1 , 0.1, 0.3 , 0.7 , 1.0 ,1.0]),
                CG.bezierToCubic([ 0.0, 0.5, 0.8, 1.1, 1.25, 1.4, 1.45, 1.55, 1.7 ,0.0]) ]);
 // let lathe = CG.cube;
 ////////////////////////////// SCENE SPECIFIC CODE
-const BUTTON = "button";
-const BLOB = "blob";
 const WOOD = 0,
       TILES = 1,
       NOISY_BUMP = 2;
-let bigButton = new BigButton([0,TABLE_HEIGHT - EYE_HEIGHT,0], 0.1, [1,0,0]);
 
 let noise = new ImprovedNoise();
 let m = new Matrix();
@@ -285,15 +316,16 @@ async function setup(state) {
    track of objects that need to be synchronized.
 
    ************************************************************************/
+	// spawn start button
 	MR.objs.push(bigButton);
+   	sendSpawnMessage(bigButton);
+
+	for (let i = 0; i < BLOB_COUNT; i++) {
+		MR.blobs.push(blobs[i]);
+		sendSpawnMessage(blobs[i]);
+	}
 
    //MR.objs.push(grabbableCube);
-   grabbableCube.position    = [0,0,-0.5].slice();
-   grabbableCube.orientation = [1,0,0,1].slice();
-   grabbableCube.uid = 0;
-   grabbableCube.lock = new Lock();
-	grabbableCube.birthTime = MR.tick;
-	grabbableCube.lifetime = 30000;
    //sendSpawnMessage(grabbableCube);
 }
 
@@ -307,28 +339,8 @@ This is an example of a spawn message we send to the server.
 function Obj(shape) {
    this.shape = shape;
 };
-const SCALE = 0.25;
-const HALL_WIDTH = 10 * SCALE;
-let BLOB_SIZE = .4 * SCALE;
-let BLOB_LIFE = 700;
-let BIRTH_OFFSET = 1000;
-let BLOB_COUNT = 30;
-let BLOB_COLORS = [
-  [1,0,0],
-  [0,1,0],
-  [0,0,1]
-]
-const START = "Game Start";
-const PLAY = "Playing";
-const END = "Game End";
-const LOAD = "Game load (fades).)";
-let MODE = START;
-
-let COLOR_TIME = 400;
-let CURRENT_COLOR = BLOB_COLORS[0];
 let playSound = false;
 let soundPosition = [];
-let blobs = [];
 let timer;
 
 function updateColor() {
@@ -337,6 +349,7 @@ function updateColor() {
 
 function BigButton(position, size, color) {
 	this.lock = new Lock();
+	this.uid = getUid();
 	this.position = position;
 	this.size = size;
 	this.color = color;	
@@ -348,7 +361,6 @@ function BigButton(position, size, color) {
 		let rPos = input.RC.tip();
 		let touched = (CG.distance(lPos, this.position) <= this.size || CG.distance(rPos, this.position) <= this.size);
 		//let touched = (CG.distance(rPos, position) <= this.size);
-		this.wasTouched = touched;
 		return touched;
 	}
 }
@@ -366,7 +378,30 @@ function Timer(dur) {
 }
 
 function Blob() {
-  let position, color, birth, death, wasTouched, revived, mode;
+	this.type = BLOB;
+	this.position = [0,0,0];
+	this.color = [0,0,0];
+	this.birth = -1;
+	this.death = -1;
+	this.wasTouched = false;
+	this.revived = false;
+	this.mode = FIXED;
+	this.lock = new Lock();
+	this.uid = getUid();
+	this.getState = () => {
+		let state = {};
+		state.type = this.type;
+		state.position = this.position;
+		state.color = this.color;
+		state.birth = this.birth;
+		state.death = this.death;
+		state.wasTouched = this.wasTouched;
+		state.revived = this.revived;
+		state.mode = this.mode;
+		return state;
+	};
+
+	let position, color, birth, death, wasTouched, revived, mode;
 	let randomPosition = () => {
 		let pos;
 		let a = Math.random() * HALL_WIDTH - HALL_WIDTH/2;
@@ -411,77 +446,98 @@ function Blob() {
 	let setPosition = () => {
     // TODO: ensure that nothing on the ceiling, and on floor?
     // TODO: ensure things are in reach
-		switch (mode) {
-		case RANDOM:
-			position = randomPosition();
-			break;
-		case FIXED:
-			position = fixedPositions(12, 12, 12);
-			break;
-		default:
-			position = fixedPositions(3, 3, 3);
+		switch (this.mode) {
+			case RANDOM:
+				this.position = randomPosition();
+				break;
+			case FIXED:
+				this.position = fixedPositions(12, 12, 12);
+				break;
+			default:
+				this.position = fixedPositions(3, 3, 3);
 		}
-	}
-  let setColor = () => {
-    color = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
-  };
-	this.type = BLOB;
-  this.makeTouched = () => { 
-	color = [0,0,0]; 
-	wasTouched = true;
-	}
-  this.getColor = () => { return color };
-  this.getPos = () => { return position; };
-  this.isAlive = (frame) => { return (frame >= birth && frame < death); }
-	this.kill = (currentFrame) => {
-		death = currentFrame + 50;
 	};
-	this.revived = () => {return revived;};
-	this.setRevived = () => {revived = true;};
-	this.setNotRevived = () => {revived = false;};
-  this.setup = (currentFrame) => {
-	if (currentFrame == 1) {
-    	birth = currentFrame + 1;
-	}else {
-    	birth = currentFrame + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
+	let setColor = () => {
+		this.color = BLOB_COLORS[Math.floor(Math.random() * BLOB_COLORS.length)];
+	};
+	this.makeTouched = () => { 
+		this.color = [0,0,0]; 
+		this.wasTouched = true;
 	}
-    death = birth + BLOB_LIFE;
-	wasTouched = false;
-	mode = FIXED;
-    // position = [0, HALL_WIDTH/2, 0];
-    setPosition();
-    setColor();
-  }
-	this.wasTouched = () => {
+	this.getColor = () => { return this.color };
+	this.getPos = () => { return this.position; };
+	this.isAlive = () => { 
+		let now = MR.tick;
+		return (now >= this.birth && now < this.death); 
+	};
+	this.kill = () => {
+		this.death = MR.tick + 2000;
+	};
+	this.wasRevived = () => {return this.revived;};
+	this.setRevived = () => {this.revived = true;};
+	this.setNotRevived = () => {this.revived = false;};
+	this.setup = () => {
+		if (this.birth == -1) {
+			this.birth = MR.tick + Math.floor(Math.random() * BIRTH_OFFSET/2) + 1;
+		}else {
+			this.birth = MR.tick + Math.floor(Math.random() * BIRTH_OFFSET) + 1;
+		}
+		this.death = this.birth + BLOB_LIFE;
+		this.wasTouched = false;
+		this.mode = FIXED;
+		// position = [0, HALL_WIDTH/2, 0];
+		setPosition();
+		setColor();
+	};
+	this.wastouched = () => {
 		return wasTouched;
 	};
-  // THIS IS NOT WORKING
-  this.isTouched = (input) => {
-    let lPos = input.LC.tip();
-    let rPos = input.RC.tip();
-    // let touched = (CG.distance(lPos, position) <= BLOB_SIZE || CG.distance(rPos, position) <= BLOB_SIZE);
-    let touched = (CG.distance(rPos, position) <= BLOB_SIZE);
-    return touched;
-  }
-  this.isValid = () => { return (color[0] == CURRENT_COLOR[0] && color[1] == CURRENT_COLOR[1] && color[1] == CURRENT_COLOR[1]);};
+	this.isTouched = (input) => {
+		let lPos = input.LC.tip();
+		let rPos = input.RC.tip();
+		let touched = (CG.distance(lPos, this.position) <= BLOB_SIZE || CG.distance(rPos, this.position) <= BLOB_SIZE);
+		//let touched = (CG.distance(rPos, this.position) <= BLOB_SIZE);
+		return touched;
+	};
+	this.isValid = () => { return (this.color[0] == CURRENT_COLOR[0] && this.color[1] == CURRENT_COLOR[1] && this.color[2] == CURRENT_COLOR[2]);};
 }
 
+function sendUpdateObjectMessage(object) {
+	const response =
+	{
+		type: "object",
+		uid: object.uid,
+		lockid: MR.playerid,
+		objType: object.type,
+		state: {}
+	};
+	switch (object.type) {
+		case BLOB:
+			response.state = object.getState();
+			break;
+		default:
+	}
 
+	MR.syncClient.send(response);
+}
 
 function sendSpawnMessage(object){
-   const response =
-      {
-         type: "spawn",
-         uid: object.uid,
-         lockid: -1,
-			frameLockid: -2,
-         state: {
-            position: object.position,
-            orientation: object.orientation,
-				birthTime: object.birthTime,
-				lifetime: object.lifetime,
-         }
-      };
+	const response =
+	{
+		type: "spawn",
+		uid: object.uid,
+		lockid: MR.playerid,
+		objType: object.type,
+		state: {}
+	};
+	switch (object.type) {
+		case BUTTON:
+			response.state.wasTouched = object.wasTouched;
+			break;
+		case BLOB:
+			break;
+		default:	
+	}
 
    MR.syncClient.send(response);
 }
@@ -604,47 +660,82 @@ function onStartFrame(t, state) {
          }
       }
    }
-	if (MODE == START) { 
-		if (input.LC && !bigButton.wasTouched && bigButton.isTouched(input)) {
+	if (MR.gameState.MODE == START) { 
+		if (input.LC && !bigButton.wasTouched && bigButton.isTouched(input)) { // don't allow game to start until there are 3 avatars in the scene
 			// more reaction to being touched? e.g. button lights up
 			console.log("Big button touched.");
-			MODE = LOAD;
-			LOAD_TIME = MR.tick;
-			// set the blobs up for the first time
-			for(let i=0;i<BLOB_COUNT; i++) {
-			  let color = Math.floor(Math.random() * BLOB_COLORS.length);
-			  let birth = Math.floor(Math.random() * 20);
-			  let blob = new Blob();
-			  blob.setup(state.frame);
-			 blob.setRevived();
-			  blobs.push(blob);
+			if (bigButton.lock.locked) {
+				MR.gameState.MODE = LOAD;
+				MR.gameState.LOAD_TIME = MR.tick;
+				bigButton.wasTouched = true;
+				// set the blobs up for the first time
+				for(let i=0;i<BLOB_COUNT; i++) {
+					MR.blobs[i].setup();
+					MR.blobs[i].setRevived();
+				}
+				const response = 
+				{
+					type: "object",
+					uid: bigButton.uid,
+					lockid: MR.playerid,
+					objType: BUTTON,
+					state: {
+						wasTouched: bigButton.wasTouched,
+						gameStateMode: MR.gameState.MODE,
+						loadTime: MR.gameState.LOAD_TIME,
+						newBlobsState: [],
+					},
+				};
+				for (let i=0; i < BLOB_COUNT; i++) {
+					response.state.newBlobsState.push(MR.blobs[i].getState());
+				}
+				MR.syncClient.send(response);
+			} else {
+				bigButton.lock.request(bigButton.uid);
 			}
 		}
-	} else if (MODE == LOAD) {
+	} else if (MR.gameState.MODE == LOAD) {
 			ROOM_COLOR = [Math.max(0, ROOM_COLOR[0] - 0.001), Math.max(0,ROOM_COLOR[1] - 0.001), Math.max(0,ROOM_COLOR[2] - 0.001)];
-			if (MR.tick >= LOAD_TIME + LOAD_DURATION) {
+			if (MR.tick >= MR.gameState.LOAD_TIME + LOAD_DURATION) {
 				timer = new Timer(PLAY_DURATION);
 				timer.start();
-				MODE = PLAY;
+				MR.gameState.MODE = PLAY;
 				ROOM_COLOR = PLAY_COLOR;
 			}	
-	} else if (MODE == PLAY) {
+	} else if (MR.gameState.MODE == PLAY) {
 		for(let i=0; i<BLOB_COUNT; i++) {
-		  let b = blobs[i];
-			if (b.isAlive(state.frame) && b.revived()){
-				b.setNotRevived();
-			}else if (!b.isAlive(state.frame) && !b.revived()) {
-				console.log("reviving\n");
-				b.setup(state.frame);
-				b.setRevived();
+			let b = MR.blobs[i];
+			if (b.isAlive() && b.wasRevived()){
+				//console.log("just came to life");
+				//if (b.lock.locked) {
+					b.setNotRevived();
+					//sendUpdateObjectMessage(b);
+				//} else {
+					//b.lock.request(b.uid);
+				//}
+			}else if (!b.isAlive() && !b.wasRevived()) {
+				if (b.lock.locked) {
+					console.log("reviving", b.uid);
+					b.setup();
+					b.setRevived();
+					sendUpdateObjectMessage(b);
+				} else {
+					b.lock.request(b.uid);
+				}
 			} else {
-			  if(input.LC && b.isAlive(state.frame) && !b.wasTouched() && b.isTouched(input) && b.isValid()) {
-				 playSound = true;
-				 soundPosition = b.getPos();
-				 //b.setup(state.frame+10);
-				 b.kill(state.frame);
-				 b.makeTouched();
-			  } 
+				if(input.LC && b.isAlive() && !b.wastouched() && b.isTouched(input) && b.isValid()) {
+					if (b.lock.locked) {
+						console.log("got one.", b.uid)
+						playSound = true;
+						soundPosition = b.getPos();
+						//b.setup(state.frame+10);
+						b.kill();
+						b.makeTouched();
+						sendUpdateObjectMessage(b);
+					} else {
+						b.lock.request(b.uid);
+					}
+				} 
 			}
 		}
 	}
@@ -661,7 +752,7 @@ function onStartFrame(t, state) {
     This function checks for intersection and if user has ownership over
     object then sends a data stream of position and orientation.
     -----------------------------------------------------------------*/
-    pollGrab(state);
+    //pollGrab(state);
 }
 
 
@@ -989,7 +1080,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		}
 	}
 
-	//drawSelfAvatar(CURRENT_COLOR);
+	drawSelfAvatar(CURRENT_COLOR);
 	//drawSelfAvatar([1,1,1]); // drawing real self for debugging here.
 
 
@@ -1024,7 +1115,7 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		m.restore();
 	}
 
-	if (MODE == PLAY) {
+	if (MR.gameState.MODE == PLAY) {
 		for(let i=0; i<BLOB_COUNT; i++) {
 			let b = blobs[i];
 			if(b.isAlive(state.frame)) {
@@ -1045,12 +1136,12 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		} else {
 			switch(obj.type) {
 				case BLOB:
-					if (MODE == PLAY) {
+					if (MR.gameState.MODE == PLAY) {
 						drawBlob(obj);
 					}
 					break;
 				case BUTTON:
-					if (MODE == START) {
+					if (MR.gameState.MODE == START) {
 						drawButton(obj);
 					}
 					break;
@@ -1059,13 +1150,13 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		}
 	}
 
-	drawAvatars(); // avatars with arm swapping
+	//drawAvatars(); // avatars with arm swapping
 
 	m.translate(0, -EYE_HEIGHT, 0);
-	if (MODE == START) {
+	if (MR.gameState.MODE == START) {
 		drawTable(0,0);
 	}
-	if (MODE == PLAY) {
+	if (MR.gameState.MODE == PLAY) {
 		drawTimer(timer);
 	}
 	m.save();
@@ -1073,6 +1164,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		m.scale(-HALL_WIDTH/2, -HALL_WIDTH/2, -HALL_WIDTH/2);
 		drawShape(CG.cube, ROOM_COLOR);
 	m.restore();
+
+	drawNormalAvatars();
 }
 
 function onEndFrame(t, state) {
@@ -1086,9 +1179,7 @@ function onEndFrame(t, state) {
        playSound = false;
        console.log("PLAY SOUNDS");
        this.audioContext2.playFileAt('assets/audio/peacock.wav', [0,0,0]);
-
      }
-
     }
    if (input.LC) input.LC.onEndFrame();
    if (input.RC) input.RC.onEndFrame();
@@ -1190,13 +1281,17 @@ function pollGrab(state) {
 }
 
 function releaseLocks(state) {
-   let input = state.input;
-   if ((input.LC && !input.LC.isDown()) && (input.RC && !input.RC.isDown())) {
-      for (let i = 0; i < MR.objs.length; i++) {
-         if (MR.objs[i].lock.locked == true) {
-            MR.objs[i].lock.locked = false;
-            MR.objs[i].lock.release(MR.objs[i].uid);
-         }
-      }
-   }
+	let input = state.input;
+	for (let i = 0; i < MR.objs.length; i++) {
+		if (MR.objs[i].lock.locked == true) {
+			MR.objs[i].lock.locked = false;
+			MR.objs[i].lock.release(MR.objs[i].uid);
+		}
+	}
+	for (let i = 0; i < MR.blobs.length; i++) {
+		if (MR.blobs[i].lock.locked == true) {
+			MR.blobs[i].lock.locked = false;
+			MR.blobs[i].lock.release(MR.blobs[i].uid);
+		}
+	}
 }

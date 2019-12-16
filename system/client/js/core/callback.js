@@ -107,9 +107,24 @@ MR.syncClient.eventBus.subscribe("lock", (json) => {
 
     if (success) {
         console.log("acquire lock success: ", key);
-        MR.objs[key].lock.locked = true;
+		let firstObjUid, firstBlobUid;
+		if (MR.objs.length == 0) {
+			firstBlobUid = MR.blobs[0].uid;
+			MR.blobs[key - firstBlobUid].lock.locked = true;	
+		} else if (MR.blobs.length == 0) {
+			firstObjUid = MR.objs[0].uid;
+			MR.objs[key - firstObjUid].lock.locked = true;
+		} else {
+			firstBlobUid = MR.blobs[0].uid;
+			firstObjUid = MR.objs[0].uid;
+			if (key >= firstObjUid && key < firstObjUid + MR.objs.length) {
+				MR.objs[key - firstObjUid].lock.locked = true;
+			} else {
+				MR.blobs[key - firstBlobUid].lock.locked = true;	
+			}
+		}
     } else {
-        console.log("acquire lock failed : ", key);
+        console.log("acquire lock failed : ", 0, " " , json["datastoreState"]);
     }
 
 });
@@ -183,24 +198,46 @@ MR.syncClient.eventBus.subscribe("spawn", (json) => {
 
     if (success) {
         console.log("object created ", json);
-        // add to MR.objs
+		// indicate that the key is locked, since spawn locks it
+    	const key = json["uid"];
+		const objType = json["objType"];
+
+		if (objType == "blob") {
+			let firstBlobUid = MR.blobs[0].uid;
+			MR.blobs[key - firstBlobUid].lock.locked = true;	
+		} else {
+			let firstObjUid = MR.objs[0].uid;
+			MR.objs[key - firstObjUid].lock.locked = true;
+		}
     } else {
         console.log("failed spawn message", json);
     }
 
 });
 
+
 MR.syncClient.eventBus.subscribe("object", (json) => {
     const success = json["success"];
      if (success) {
-      console.log("object moved: ", json);
+      console.log("object modified: ", json);
       // update update metadata for next frame's rendering
-      let current = MR.objs[json["uid"]];
-      console.log(json);
-      current.position = [json["state"]["position"][0], json["state"]["position"][1], json["state"]["position"][2]];
+		if (json["objType"] == "startButton") {
+      		let current = MR.objs[json["uid"]];
+			current.wasTouched = json["state"]["wasTouched"];
+			MR.gameState.MODE = json["state"]["gameStateMode"];
+			MR.gameState.LOAD_TIME = json["state"]["loadTime"];
+			for (let i = 0; i < MR.blobs.length; i++) {
+				updateBlobState(i, json["state"]["newBlobsState"][i]);		
+			}
+		} else if (json["objType"] == "blob") {
+			// get uid of firsblob
+			let firstBlobUid = MR.blobs[0].uid;
+			//let current = MR.blobs[json["uid"] - firstBlobUid]	
+			updateBlobState(json["uid"] - firstBlobUid, json["state"]);
+		}
+      //current.position = [json["state"]["position"][0], json["state"]["position"][1], json["state"]["position"][2]];
     //current.orientation = MR.objs[json["state"]["orientation"]];
-    }
-    else{
+    } else{
       console.log("failed object message", json);
     }
 });
@@ -224,6 +261,16 @@ MR.syncClient.eventBus.subscribe("calibration", (json) => {
     console.log("world tick: ", json);
 });
 
+function updateBlobState(i, state) {
+	let blob = MR.objs[i];
+	blob.position = [state["position"][0], state["position"][1], state["position"][2]];
+	blob.color = [state["color"][0], state["color"][1], state["color"][2]];
+	blob.birth = state["birth"];
+	blob.death = state["death"];
+	blob.wasTouched = state["wasTouched"];
+	blob.revived = state["revived"];
+	return;
+}
 
 function pollAvatarData() 
 {

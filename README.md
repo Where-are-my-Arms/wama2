@@ -13,3 +13,5 @@ TODO:
 * deal with calibration
 * Detect blob interactions based on controller position after swap
 * Integrate arms Atom provided
+* Draw blobs on circular table, update swapping to use that setup
+* Play blob sounds properly

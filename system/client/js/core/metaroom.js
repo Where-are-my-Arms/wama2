@@ -266,6 +266,8 @@ MR.playerType = MR.UserType.browser;
 MR.tick = -1;
 
 MR.objs = [];
+MR.blobs = [];
+MR.gameState = {};
 
 window.onbeforeunload = function() {
     websocket.onclose = function () {}; // disable onclose handler first

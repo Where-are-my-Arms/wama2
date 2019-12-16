@@ -296,6 +296,7 @@ try {
                 const key = json["uid"];
                 const lockid = json["lockid"];
                 const state = json["state"];
+				const objType = json["objType"];
 
                 if(datastore.acquire(key, lockid)) {
                     datastore.setObjectData(key, state);
@@ -305,6 +306,7 @@ try {
                     const response = {
                         "type": "object",
                         "uid": key,
+						"objType": objType,
                         "state": state,
                         "lockid": lockid,
                         "success": true
@@ -328,6 +330,7 @@ try {
                 const key = json["uid"];
                 const lockid = json["lockid"];
                 const state = json["state"];
+				const objType = json["objType"];
 
                 if (!datastore.exists(key)) {
                     datastore.add(key);
@@ -337,6 +340,7 @@ try {
                     const response = {
                         "type": "spawn",
                         "uid": key,
+						"objType": objType,
                         "state": state,
                         "success": true
                     }; //vel / acc , ...
@@ -399,7 +403,8 @@ try {
                     const response = {
                         "type": "lock",
                         "uid": key,
-                        "success": false
+                        "success": false,
+						"datastoreState": datastore.state
                     };
 
                     send(ws.index, -1, response);

@@ -87,7 +87,7 @@ class DataStore {
     }
 
     exists(key) {
-        return key in this.state;
+        return key in this.state['objects'];
     }
 
     add(key) {
