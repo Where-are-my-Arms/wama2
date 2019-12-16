@@ -262,7 +262,7 @@ MR.syncClient.eventBus.subscribe("calibration", (json) => {
 });
 
 function updateBlobState(i, state) {
-	let blob = MR.objs[i];
+	let blob = MR.blobs[i];
 	blob.position = [state["position"][0], state["position"][1], state["position"][2]];
 	blob.color = [state["color"][0], state["color"][1], state["color"][2]];
 	blob.birth = state["birth"];
