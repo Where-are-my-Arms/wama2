@@ -1046,6 +1046,7 @@ function onStartFrame(t, state) {
 							b.kill();
 							b.makeTouched();
 							sendUpdateObjectMessage(b);
+							sendScoreMessage(++ MR.score);
 						} else {
 							if (state.frame > timeAtLastBlobRequest[i] + 20) {
 								timeAtLastBlobRequest[i] = state.frame;
@@ -1486,8 +1487,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 			m.restore();
 		m.restore();
 		*/
-		drawSyncController(rightControllerPos, rcontroller.orientation, CURRENT_COLOR, yAngleNext - yAngle,1);
-		drawSyncController(leftControllerPos, lcontroller.orientation, CURRENT_COLOR, yAngleNext - yAngle,0);
+		drawSyncController(rightControllerPos, rcontroller.orientation, CURRENT_COLOR, yAngle - yAnagleNext,1);
+		drawSyncController(leftControllerPos, lcontroller.orientation, CURRENT_COLOR, yAngle - yAngleNext,0);
 	};
 	// Avatars with arm swapping
 	let drawAvatars = () => {
