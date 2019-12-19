@@ -44,7 +44,7 @@ const LOAD_DURATION = 1500;
 let PLAY_COLOR = [1,1,1];	
 let START_COLOR = [0.1,0.1,0.1];
 let ROOM_COLOR = START_COLOR;
-const PLAY_DURATION = 30000; // play time in milliseconds
+const PLAY_DURATION = 60000; // play time in milliseconds
 let uid = -1;
 let getUid = () => {
 	uid += 1;
@@ -995,7 +995,7 @@ function onStartFrame(t, state) {
 				}
 				MR.syncClient.send(response);
 			} else {
-				if (state.frame > timeAtLastObjRequest[0] + 20) {
+				if (state.frame > timeAtLastObjRequest[0] + 100) {
 					timeAtLastObjRequest[0] = state.frame;
 					bigButton.lock.request(bigButton.uid);
 				}
@@ -1031,7 +1031,7 @@ function onStartFrame(t, state) {
 						b.setRevived();
 						sendUpdateObjectMessage(b);
 					} else {
-						if (state.frame > timeAtLastBlobRequest[i] + 20) {
+						if (state.frame > timeAtLastBlobRequest[i] + 100) {
 							timeAtLastBlobRequest[i] = state.frame;
 							b.lock.request(b.uid);
 						}
@@ -1048,7 +1048,7 @@ function onStartFrame(t, state) {
 							sendUpdateObjectMessage(b);
 							sendScoreMessage(++ MR.score);
 						} else {
-							if (state.frame > timeAtLastBlobRequest[i] + 20) {
+							if (state.frame > timeAtLastBlobRequest[i] + 100) {
 								timeAtLastBlobRequest[i] = state.frame;
 								b.lock.request(b.uid);
 							}
@@ -1271,35 +1271,35 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
       let P = pos;
       m.save();
       // m.identity();
-      m.translate(P[0], P[1], P[2]);
-      if (typeof yAngle !== 'undefined') {
-         m.rotateY(yAngle);
-      }
-      m.rotateQ(rot);
-      m.translate(0, .02, -.005);
-      m.rotateX(.75);
-      if (typeof isRight !== 'undefined') {
-         drawModHand(isRight, color);
-      }
-      m.save();
-      m.translate(0, 0, -.0095).scale(.004, .004, .003);
-      m.restore();
-      m.save();
-      m.translate(0, 0, -.01).scale(.04, .04, .13);
-      drawShape(CG.torus1, color);
-      m.restore();
-      m.save();
-      m.translate(0, -.0135, -.008).scale(.04, .0235, .0015);
-      drawShape(CG.cylinder, color);
-      m.restore();
-      m.save();
-      m.translate(0, -.01, .03).scale(.012, .02, .037);
-      drawShape(CG.cylinder, color);
-      m.restore();
-      m.save();
-      m.translate(0, -.01, .067).scale(.012, .02, .023);
-      drawShape(CG.sphere, color);
-      m.restore();
+		  m.translate(P[0], P[1], P[2]);
+		  if (typeof yAngle !== 'undefined') {
+			 m.rotateY(yAngle);
+		  }
+		  m.rotateQ(rot);
+		  m.translate(0, .02, -.005);
+		  m.rotateX(.75);
+		  if (typeof isRight !== 'undefined') {
+			 drawModHand(isRight, color);
+		  }
+		  m.save();
+		  	m.translate(0, 0, -.0095).scale(.004, .004, .003);
+		  m.restore();
+		  m.save();
+		  	m.translate(0, 0, -.01).scale(.04, .04, .13);
+		  	drawShape(CG.torus1, color);
+		  m.restore();
+		  m.save();
+		  	m.translate(0, -.0135, -.008).scale(.04, .0235, .0015);
+		  	drawShape(CG.cylinder, color);
+		  m.restore();
+		  m.save();
+		  	m.translate(0, -.01, .03).scale(.012, .02, .037);
+			  drawShape(CG.cylinder, color);
+		  m.restore();
+		  m.save();
+			  m.translate(0, -.01, .067).scale(.012, .02, .023);
+			  drawShape(CG.sphere, color);
+		  m.restore();
       m.restore();
    }
 
@@ -1475,8 +1475,8 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 		let rightDisp = [xzRightDisp[0], rightDispNext[1], xzRightDisp[2]]; // add y displacement back in
 		let rightControllerPos = CG.add(headsetPos, rightDisp);
 
-		/*
-		m.save();
+		
+		/*m.save();
 			m.translate(headsetPos[0], headsetPos[1], headsetPos[2]);
 			m.rotateQ(headsetRot);
 			m.save();
@@ -1485,10 +1485,13 @@ function onDraw(t, projMat, viewMat, state, eyeIdx) {
 					drawShape(CG.cylinder, [0.2,0.2,0.4]);
 				m.restore();
 			m.restore();
-		m.restore();
-		*/
-		drawSyncController(rightControllerPos, rcontroller.orientation, CURRENT_COLOR, yAngle - yAnagleNext,1);
-		drawSyncController(leftControllerPos, lcontroller.orientation, CURRENT_COLOR, yAngle - yAngleNext,0);
+		m.restore();*/
+		if (avatar.playerid != MR.playerid) {
+			drawHeadset(headsetPos, headsetRot);
+		}
+		
+		drawSyncController(rightControllerPos, rControllerNext.orientation, CURRENT_COLOR, yAngle - yAngleNext,1);
+		drawSyncController(leftControllerPos, lControllerNext.orientation, CURRENT_COLOR, yAngle - yAngleNext,0);
 	};
 	// Avatars with arm swapping
 	let drawAvatars = () => {
