@@ -987,7 +987,7 @@ function onStartFrame(t, state) {
 				}
 				MR.syncClient.send(response);
 			} else {
-				if (state.frame > timeAtLastObjRequest[0] + 20) {
+				if (state.frame > timeAtLastObjRequest[0] + 100) {
 					timeAtLastObjRequest[0] = state.frame;
 					bigButton.lock.request(bigButton.uid);
 				}
@@ -1020,7 +1020,7 @@ function onStartFrame(t, state) {
 					b.setRevived();
 					sendUpdateObjectMessage(b);
 				} else {
-					if (state.frame > timeAtLastBlobRequest[i] + 20) {
+					if (state.frame > timeAtLastBlobRequest[i] + 100) {
 						timeAtLastBlobRequest[i] = state.frame;
 						b.lock.request(b.uid);
 					}
@@ -1036,7 +1036,7 @@ function onStartFrame(t, state) {
 						b.makeTouched();
 						sendUpdateObjectMessage(b);
 					} else {
-						if (state.frame > timeAtLastBlobRequest[i] + 20) {
+						if (state.frame > timeAtLastBlobRequest[i] + 100) {
 							timeAtLastBlobRequest[i] = state.frame;
 							b.lock.request(b.uid);
 						}
